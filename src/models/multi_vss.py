@@ -5,8 +5,6 @@ from typing import Any
 from src.models.model import ModelForSemiStructQA
 from src.models.vss import VSS
 from src.tools.api import get_ada_embeddings, get_ada_embedding
-from src.tools.operation import get_top_k_indices
-import json
 from src.tools.process_text import chunk_text
 
 

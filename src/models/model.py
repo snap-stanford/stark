@@ -61,7 +61,6 @@ class ModelForSemiStructQA(nn.Module):
         bool_gd = bool_gd[self.candidate_ids]
 
         eval_metrics = {}
-        # sorted_ids = torch.argsort(all_pred, descending=True)
         for metric in metrics:
             k = int(metric.split('@')[-1]) if '@' in metric else None
             if 'mrr' == metric:

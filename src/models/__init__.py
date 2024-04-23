@@ -2,8 +2,6 @@ import os.path as osp
 from .vss import  VSS
 from .llm_qa import LLMQA
 from .multi_vss import MultiVSS
-from .gnn import GNN
-from .dense_retriever import DenseRetrieval
 
 def get_model(args, database):
     model_name = args.model
@@ -23,14 +21,6 @@ def get_model(args, database):
             chunk_size=args.chunk_size,
             max_k=args.multi_vss_topk
         )
-    if model_name == 'GNN':
-        output_dir = osp.join(args.output_dir, args.dataset, args.model)
-        return GNN(
-            database,
-            query_emb_dir=args.query_emb_dir, 
-            candidates_emb_dir=args.node_emb_dir,
-            output_dir=output_dir
-        )
     if model_name in ['GPTQA', 'ClaudeQA']:
         return LLMQA(database, 
                      model_name=args.llm_version,
@@ -38,17 +28,4 @@ def get_model(args, database):
                      candidates_emb_dir=args.node_emb_dir,
                      max_k=args.llm_topk
                      )
-    if 'DenseRetriever' in model_name:
-        return DenseRetrieval(
-            database=database,
-            model_path=args.model_path, 
-            doc_enc_dir=args.doc_enc_dir,
-            query_emb_dir=args.query_emb_dir, 
-            candidates_emb_dir=args.node_emb_dir, 
-            candidates_dir=args.candidates_dir,
-            eval_batch_size=args.eval_batch_size,
-            num_candidates=args.num_candidates,
-            dataset=args.dataset,
-            renew_candidates=False
-        )
     raise NotImplementedError(f'{model_name} not implemented')

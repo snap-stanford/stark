@@ -1,8 +1,7 @@
 import os
 import os.path as osp
 import torch    
-from torch import multiprocessing 
-from typing import Any, Union
+from typing import Any
 from src.models.model import ModelForSemiStructQA
 from src.tools.api import get_ada_embeddings, get_ada_embedding
 from tqdm import tqdm
@@ -27,7 +26,6 @@ class VSS(ModelForSemiStructQA):
         self.candidates_emb_dir = candidates_emb_dir
 
         candidate_emb_path = osp.join(candidates_emb_dir, 'candidate_emb_dict.pt')
-        all_node_emb_path = osp.join(candidates_emb_dir, 'all_node_emb_dict.pt')
         if osp.exists(candidate_emb_path):
             candidate_emb_dict = torch.load(candidate_emb_path)
             print(f'Loaded candidate_emb_dict from {candidate_emb_path}!')
