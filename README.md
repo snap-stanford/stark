@@ -37,7 +37,12 @@ requirements in queries.
 # Access benchmark data
 
 ## 1) Env Setup
-Please install the required packages in `requirements.txt`.
+Create a conda env with python 3.8 and install required packages in `requirements.txt`.
+```bash
+conda create -n stark python=3.8 
+conda activate stark
+pip install -r requirements.txt
+```
 
 ## 2) Data loading 
 
