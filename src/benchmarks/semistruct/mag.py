@@ -30,31 +30,30 @@ class MagSemiStruct(SemiStructureKB):
                       'author': ['name'],
                       'institution': ['name'],
                       'field_of_study': ['name']}
+    external_link = 'https://zenodo.org/records/2628216'
     def __init__(self, 
                  root,
                  schema_dir=None,
                  save_path=None):
 
         self.root = root
-        self.data_root = osp.join(self.root, 'ogbn_mag')
-        self.text_root = osp.join(self.root, 'ogbn_papers100M')
+        self.data_root = osp.join(self.root, 'raw', 'ogbn_mag')
+        self.text_root = osp.join(self.root, 'raw', 'ogbn_papers100M')
 
         # existing dirs/files
         self.schema_dir = schema_dir
-        self.mag_mapping_dir = osp.join(self.data_root, 'mag_mapping')
+        self.mag_mapping_dir = '/dfs/project/kgrlm/data/ogbn_mag/mag_mapping' # osp.join(self.data_root, 'mag_mapping')
         self.ogbn_mag_mapping_dir = osp.join(self.data_root, 'mapping')
         self.title_path = osp.join(self.text_root, 'paperinfo/idx_title.tsv')
         self.abstract_path = osp.join(self.text_root, 'paperinfo/idx_abs.tsv')
-        # self.merged_title_abs_path = osp.join(self.text_root, 'paperinfo/idx_title_abs.tsv')
 
         # new files
-        self.save_path = osp.join(self.data_root, 'processed') if save_path is None else save_path
+        self.save_path = osp.join(self.root, 'processed') if save_path is None else save_path
         self.mag_metadata_cache_dir = osp.join(self.save_path, 'mag_cache')
         self.paper100M_text_cache_dir = osp.join(self.save_path, 'paper100M_cache')
         os.makedirs(self.mag_metadata_cache_dir, exist_ok=True)
         os.makedirs(self.paper100M_text_cache_dir, exist_ok=True)
 
-        # from /dfs/project/kgrlm/data/ogbn_papers100M/paperinfo/idx_title_abs.tsv
         self.merged_filtered_path = osp.join(self.paper100M_text_cache_dir, 'idx_title_abs.tsv')
 
         if osp.exists(osp.join(self.save_path, 'node_info.pkl')):
@@ -104,8 +103,11 @@ class MagSemiStruct(SemiStructureKB):
             loaded_csv = {}
             for key in reduced_attr.keys():
                 column_nums = [full_attr[key].index(i) for i in reduced_attr[key]]
-                loaded_csv[key] = pd.read_csv(os.path.join(self.mag_mapping_dir, key + '.txt.gz'), 
-                                            header=None, sep='\t', usecols=column_nums)
+                file = osp.join(self.mag_mapping_dir, key + '.txt.gz')
+                if not osp.exists(file):
+                    print(f'{key} data not found, please download from {self.external_link} to {file}')
+                    raise FileNotFoundError
+                loaded_csv[key] = pd.read_csv(file, header=None, sep='\t', usecols=column_nums)
                 loaded_csv[key].columns = reduced_attr[key]
 
             print('processing and merging meta data...')
@@ -183,8 +185,8 @@ class MagSemiStruct(SemiStructureKB):
             title = pd.read_csv(self.title_path, sep='\t', header=None)
             title.columns = ["mag_id", "title"]
             print('filtering title in English...')
+
             # filter the title that's in mag_ids
-            import pdb; pdb.set_trace()
             title = title[title['mag_id'].apply(lambda x: x in mag_ids)]
             title_en = title[title['title'].apply(is_english)]
 
@@ -192,14 +194,11 @@ class MagSemiStruct(SemiStructureKB):
             abstract = pd.read_csv(self.abstract_path, sep='\t', header=None)
             abstract.columns = ["mag_id", "abstract"]
             print('filtering abstract in English...')
-            import pdb; pdb.set_trace()
+
             abstract = abstract[abstract['mag_id'].apply(lambda x: x in mag_ids)]
             abstract_en = abstract[abstract['abstract'].apply(is_english)]
 
             print('start merging title and abstract...')
-            # title_en["mag_id"] = title_en["mag_id"].astype(np.int64)
-            # abstract_en["mag_id"] = abstract_en["mag_id"].astype(np.int64)
-            import pdb; pdb.set_trace()
             title_abs_en = pd.merge(title, abs, how="outer", on="mag_id", sort=True)
             title_abs_en.to_csv(self.merged_filtered_path, sep="\t", header=True, index=False)
             
@@ -492,9 +491,3 @@ class MagSemiStruct(SemiStructureKB):
             save_files(save_path=self.save_path, **processed_data)
 
         return processed_data
-
-
-if __name__ == '__main__':
-    database = MagSemiStruct(root='/dfs/project/kgrlm/data', 
-                             schema_dir='/dfs/project/kgrlm/shirwu/kgrlm/meta_data',
-                             save_path='/dfs/project/kgrlm/benchmark/mag/processed')

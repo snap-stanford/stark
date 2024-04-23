@@ -292,37 +292,6 @@ class SemiStructureKB:
             neighbor_nodes = self.sparse_adj_by_type[edge_type][idx].coalesce().indices().view(-1).tolist()
         return neighbor_nodes
     
-    # def get_neighbor_nodes(self, idx, edge_type: str, direction='in-and-out') -> list:
-    #     '''
-    #     Get the neighbor nodes given the node ID and the edge type.
-        
-    #     Args:
-    #         idx (int): node index
-    #         edge_type (str): edge type, use "*" to indicate any edge type.
-    #         direction (str): direction of the edge, can be "in", "out", or "in-and-out"
-    #     '''
-    #     if direction == "in":
-    #         edge_idx = torch.arange(self.num_edges())[self.edge_index[1] == idx]
-    #     elif direction == "out":    
-    #         edge_idx = torch.arange(self.num_edges())[self.edge_index[0] == idx]
-    #     elif direction == "in-and-out":
-    #         edge_idx = torch.arange(self.num_edges())[(self.edge_index == idx).sum(axis=0).bool()]
-    #     else:
-    #         raise ValueError(f"Invalid direction {direction}")
-
-    #     if not edge_type == "*":
-    #         edge_type_id = self.edge_type2id(edge_type)
-    
-    #         edge_types = self.edge_types[edge_idx]
-    
-    #         edge_idx = edge_idx[edge_types == edge_type_id]
-
-    #     node_idx = set(self.edge_index[:, edge_idx].flatten().tolist()) - set([idx])
-
-    #     node_idx = list(node_idx)
-    #     node_idx.sort()
-    #     return node_idx
-
     def k_hop_neighbor(self, node_idx, num_hops, **kwargs):
         subset, edge_index, _, edge_mask = k_hop_subgraph(node_idx, 
                                                           num_hops, 

@@ -2,7 +2,7 @@ import os.path as osp
 from src.benchmarks.semistruct import AmazonSemiStruct, PrimeKGSemiStruct, MagSemiStruct
 
 
-def get_semistructured_data(name, root='/dfs/project/kgrlm/benchmark/'):
+def get_semistructured_data(name, root='data/'):
     data_root = osp.join(root, name)
     if name == 'amazon':
         categories = ['Sports_and_Outdoors']
@@ -16,14 +16,13 @@ def get_semistructured_data(name, root='/dfs/project/kgrlm/benchmark/'):
                                     )
     if name == 'primekg':
         save_path = osp.join(data_root, 'processed')
-        metadata_path = osp.join(data_root, 'primekg_metadata_extended.pkl')
-        kg_path = osp.join(root, 'kg.csv')
-        database = PrimeKGSemiStruct(save_path, metadata_path, kg_path)
+        database = PrimeKGSemiStruct(root=data_root,
+                                     save_path=save_path)
     
     if name == 'mag':
         save_path = osp.join(data_root, 'processed')
         raw_data_dir = osp.join(data_root, 'raw')
-        database = MagSemiStruct(root='/dfs/project/kgrlm/data', 
+        database = MagSemiStruct(root=data_root, 
                                  schema_dir=osp.join(raw_data_dir, 'schema'),
                                  save_path=save_path)
     return database

@@ -1,20 +1,17 @@
-import os
+import copy
 import os.path as osp
 import torch
-import json
+import pandas as pd
 
 
 class STaRKDataset:
     def __init__(self, query_dir, split_dir):
         self.query_dir = query_dir
         self.split_dir = split_dir
-        
-        file_names = [path.split('/')[-1].split('.')[0] for path in os.listdir(query_dir)]
-        splitted_paths = [((splitted := path.split("_"))[0], splitted[-1]) 
-                          for path in file_names]
-        
-        self.prefix = list(set([s[0] for s in splitted_paths]))[0]
-        self.indices = list(set([int(s[1]) for s in splitted_paths]))
+        self.qa_csv_path = osp.join(query_dir, 'stark_qa.csv')
+        self.data = pd.read_csv(self.qa_csv_path)
+
+        self.indices = list(self.data['id'])
         self.indices.sort()
         self.split_indices = self.get_idx_split()
     
@@ -22,22 +19,14 @@ class STaRKDataset:
         return len(self.indices)
 
     def __getitem__(self, idx):
-        query_id = self.indices[idx]
-        meta_info = json.load(
-            open(osp.join(self.query_dir, f'{self.prefix}_{query_id}.json'), 'r')
-            )
-        query = meta_info.pop('query')
-        answer_ids = meta_info.pop('answer_ids')
+        q_id = self.indices[idx]
+        meta_info = None
+        row = self.data[self.data['id'] == q_id].iloc[0]
+        query = row['query']
+        answer_ids = eval(row['answer_ids'])
         
-        return query, query_id, answer_ids, meta_info
+        return query, q_id, answer_ids, meta_info
 
-    def get_query_by_qid(self, q_id):
-        meta_info = json.load(
-            open(osp.join(self.query_dir, f'{self.prefix}_{q_id}.json'), 'r')
-            )
-        query = meta_info.pop('query')
-        return query, meta_info
-        
     def get_idx_split(self, test_ratio=1.0):
         '''
         Return the indices of train/val/test split in a dictionary.
@@ -60,6 +49,7 @@ class STaRKDataset:
         assert split in ['train', 'val', 'test']
         indices_file = osp.join(self.split_dir, f'{split}.index') 
         indices = open(indices_file, 'r').read().strip().split('\n')
-        self.indices = [int(idx) for idx in indices]
-        return self
+        subset = copy.deepcopy(self)
+        subset.indices = [int(idx) for idx in indices]
+        return subset
     

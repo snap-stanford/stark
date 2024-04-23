@@ -9,6 +9,8 @@ from src.tools.process_text import compact_text, clean_dict
 from src.tools.node import Node, register_node
 from src.tools.io import save_files, load_files
 from tdc.resource import PrimeKG
+import gdown
+import zipfile
 import json
 
 
@@ -23,7 +25,7 @@ class PrimeKGSemiStruct(SemiStructureKB):
     META_DATA = ['id', 'type', 'name', 'source', 'details']
     candidate_types = NODE_TYPES 
 
-    def __init__(self, save_path=None, meta_path=None, kg_path=None, renew=False):
+    def __init__(self, root, save_path=None, renew=False):
         '''
             Args: 
                 save_path (Path or str): dir that stores processed data
@@ -31,10 +33,15 @@ class PrimeKGSemiStruct(SemiStructureKB):
         '''
         
         # construct the graph based on link info in the raw data
-        self.raw_data = 'Not loaded'
-        self.kg_path = kg_path
+        self.root = root
+        self.raw_data_dir = osp.join(root, 'raw')
         self.renew = renew
-        processed_data = self.process_raw(save_path, meta_path)
+
+        os.makedirs(self.raw_data_dir, exist_ok=True)
+        self.kg_path = osp.join(self.raw_data_dir, 'kg.csv')
+        self.meta_path = osp.join(self.raw_data_dir, 'primekg_metadata_extended.pkl')
+        
+        processed_data = self.process_raw(save_path, self.meta_path)
         super(PrimeKGSemiStruct, self).__init__(**processed_data)
         self.node_info = clean_dict(self.node_info)
 
@@ -45,6 +52,18 @@ class PrimeKGSemiStruct(SemiStructureKB):
                 attrbutes.extend(self[idx].__attr__())
             self.node_attr_dict[node_type] = list(set(attrbutes))
 
+    def _download_raw_data(self):
+        output = 'raw.zip'
+        if not osp.exists(osp.join(self.kg_path)):
+            url = 'https://drive.google.com/uc?id=1yNG7x79VPB-mmXX6ln-CIE3xP1iuOCB2'
+            try:
+                gdown.download(url, osp.join(self.root, output), quiet=False)
+            except Exception as error:
+                print('Try upgrading your gdown package with `pip install gdown --upgrade`')
+                raise error
+            with zipfile.ZipFile(osp.join(self.root, output), 'r') as zip_ref:
+                zip_ref.extractall(self.root)
+
     def process_raw(self, save_path, meta_path):
         if save_path is not None and osp.exists(osp.join(save_path, 'node_info.pkl')) and self.renew == False:
             files = load_files(save_path)
@@ -52,6 +71,7 @@ class PrimeKGSemiStruct(SemiStructureKB):
         else:
             if not osp.isdir(save_path):
                 os.makedirs(save_path)
+            self._download_raw_data()
             print('Loading data... It might take a while')
             with open(self.kg_path, 'r') as rf:
                 self.raw_data = pd.read_csv(rf)
@@ -155,7 +175,7 @@ class PrimeKGSemiStruct(SemiStructureKB):
                 else:
                     raise NotImplementedError
             
-            data = PrimeKG(path = './data')
+            data = PrimeKG(path=self.raw_data_dir)
 
             drug_feature = data.get_features(feature_type = 'drug')
             disease_feature = data.get_features(feature_type = 'disease')
@@ -283,11 +303,3 @@ class PrimeKGSemiStruct(SemiStructureKB):
             doc = '- relations:\n' + doc
         return doc
     
-'''
-Usage:
-    from primekg import PrimeKGSemiStruct
-    save_path = '/dfs/project/kgrlm/data/primekg_processed_extended'
-    metadata_path = '/dfs/project/kgrlm/data/primekg_raw/primekg_metadata_extended.pkl'
-    kg_path = '/dfs/project/kgrlm/data/primekg_raw/kg.csv'
-    dataset = PrimeKGSemiStruct(save_path, metadata_path, kg_path)
-'''

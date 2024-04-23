@@ -266,22 +266,13 @@ class AmazonSemiStruct(SemiStructureKB):
                 meta_df_lst.append(cat_review)
             df_ucsd_meta = pd.concat(meta_df_lst)
             
-            # print('Cleaning data...')
-            # cleaning QA and review data
-            # for df in [df_qa, df_review]:
-            #     for column in df.columns:
-            #         df[column].replace('', np.nan, inplace=True)
-            #     df.dropna(inplace=True)
-            
             print('Preprocessing data...')
             df_ucsd_meta = df_ucsd_meta.drop_duplicates(subset='asin', keep='first')
             df_meta = df_ucsd_meta[self.meta_columns + self.link_columns]
             
             # Merge dataframes
-            # df_qa_meta = df_qa.merge(df_meta, left_on='asin', right_on='asin')
             df_review_meta = df_review.merge(df_meta, left_on='asin', right_on='asin')
             unique_asin = np.unique(np.array(df_review_meta['asin']))
-            # unique_asin = np.array(list(set(df_review_meta['asin']).intersection(set(df_qa_meta['asin']))))
             
             # Filer items with both meta and review data
             df_qa_reduced = df_qa[df_qa['asin'].isin(unique_asin)]
