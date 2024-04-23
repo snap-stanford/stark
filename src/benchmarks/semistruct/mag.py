@@ -42,7 +42,7 @@ class MagSemiStruct(SemiStructureKB):
 
         # existing dirs/files
         self.schema_dir = schema_dir
-        self.mag_mapping_dir = '/dfs/project/kgrlm/data/ogbn_mag/mag_mapping' # osp.join(self.data_root, 'mag_mapping')
+        self.mag_mapping_dir = osp.join(self.data_root, 'mag_mapping')
         self.ogbn_mag_mapping_dir = osp.join(self.data_root, 'mapping')
         self.title_path = osp.join(self.text_root, 'paperinfo/idx_title.tsv')
         self.abstract_path = osp.join(self.text_root, 'paperinfo/idx_abs.tsv')
