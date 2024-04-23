@@ -11,12 +11,11 @@
 </div>
 
 ## What is STaRK?
-STaRK is a large-scale semi-structure retrieval
-benchmark on Textual and Relational Knowledge Bases. Given a user query, the task is to extract nodes from the knowledge base that are relevant to the query. 
+STaRK is a large-scale semi-structure retrieval benchmark on Textual and Relational Knowledge Bases. Given a user query, the task is to extract nodes from the knowledge base that are relevant to the query. 
 
 
-<figure style="display: block; margin-left: auto; margin-right: auto; width: 50%;"> 
-    <img src="media/overview.png" height="250">
+<figure class="center-figure">
+    <img src="media/overview.png" height="350">
 </figure>
 
 
@@ -28,20 +27,21 @@ requirements in queries.
 
 - **Large-scale and Diverse KBs**: We provide three large-scale knowledge bases across three areas, which are constructed from public sources.
 
-    <figure> <img src="media/kb.jpg" height="350"></figure> 
+    <figure class="center-figure"> <img src="media/kb.jpg" height="550"></figure> 
 
 - **Natural-sounding and Practical Queries**: The queries in our benchmark are crafted to incorporate rich relational information and complex textual properties, and closely mirror questions in real-life scenarios, e.g., with flexible query formats and possibly with extra contexts.
 
-    <figure> <img src="media/questions.jpg" height="300"></figure> 
+    <figure class="center-figure"> <img src="media/questions.jpg" height="350"></figure> 
+
 
 # Access benchmark data
 
-## Env Setup
+## 1) Env Setup
 Please install the required packages in `requirements.txt`.
 
-## Data download and loading 
+## 2) Data download and loading 
 
-[under construction, stay tuned!]
+[under construction, will be made available very soon!]
 
 ## Reference 
 
