@@ -1,0 +1,14 @@
+{
+    "mag": {
+        "chunk_size": 256,
+        "multi_vss_topk": 50
+    },
+    "primekg": {
+        "chunk_size": 256, 
+        "multi_vss_topk": 50
+    },
+    "amazon": {
+        "chunk_size": 256,
+        "multi_vss_topk": 50
+    }
+}
