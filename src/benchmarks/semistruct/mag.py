@@ -10,7 +10,7 @@ from langdetect import detect
 import sys
 from ogb.utils.url import download_url, extract_zip
 from src.tools.process_text import clean_data, compact_text, decode_escapes
-from src.benchmarks.semistruct.database import SemiStructureKB
+from src.benchmarks.semistruct.knowledge_base import SemiStructureKB
 from src.tools.io import save_files, load_files
 
 

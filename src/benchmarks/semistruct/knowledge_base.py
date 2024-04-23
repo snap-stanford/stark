@@ -10,7 +10,8 @@ color_types = ['#97c2fc', 'lightgreen', 'lightpink', 'lightpurple']
 
 class SemiStructureKB:
     def __init__(self, node_info, edge_index, 
-                 node_type_dict=None, edge_type_dict=None, 
+                 node_type_dict=None, 
+                 edge_type_dict=None, 
                  node_types=None, edge_types=None, indirected=True, **kwargs):
         """
         A abstract dataset for semistructure data

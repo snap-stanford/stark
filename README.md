@@ -56,6 +56,7 @@ Please install the required packages in `requirements.txt`.
         James Zou and Jure Leskovec
     },
     eprinttype   = {arXiv},
-    eprint       = {xxx}
+    eprint       = {2404.13207},
+  year           = {2024}
 }
 ```
