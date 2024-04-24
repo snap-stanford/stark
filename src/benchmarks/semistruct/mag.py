@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from langdetect import detect
 import sys
+from ogb.nodeproppred import NodePropPredDataset
 from ogb.utils.url import download_url, extract_zip
 from src.tools.process_text import clean_data, compact_text, decode_escapes
 from src.benchmarks.semistruct.knowledge_base import SemiStructureKB
@@ -18,7 +19,9 @@ class MagSemiStruct(SemiStructureKB):
     
     test_columns = ['title', 'abstract', 'text']
     candidate_types = ['paper']
-    url = 'https://snap.stanford.edu/ogb/data/misc/ogbn_papers100M/paperinfo.zip'
+    ogbn_papers100M_url = 'https://snap.stanford.edu/ogb/data/misc/ogbn_papers100M/paperinfo.zip'
+    mag_mapping_url = 'https://zenodo.org/records/2628216/files'
+
     node_type_dict =  {0: 'author', 1: 'institution', 2: 'field_of_study', 3: 'paper'}
     edge_type_dict = {
         0: 'author___affiliated_with___institution',
@@ -30,20 +33,19 @@ class MagSemiStruct(SemiStructureKB):
                       'author': ['name'],
                       'institution': ['name'],
                       'field_of_study': ['name']}
-    external_link = 'https://zenodo.org/records/2628216'
     def __init__(self, 
                  root,
                  schema_dir=None,
                  save_path=None):
 
         self.root = root
-        self.data_root = osp.join(self.root, 'raw', 'ogbn_mag')
+        self.graph_data_root = osp.join(self.root, 'raw', 'ogbn_mag')
         self.text_root = osp.join(self.root, 'raw', 'ogbn_papers100M')
 
         # existing dirs/files
         self.schema_dir = schema_dir
-        self.mag_mapping_dir = osp.join(self.data_root, 'mag_mapping')
-        self.ogbn_mag_mapping_dir = osp.join(self.data_root, 'mapping')
+        self.mag_mapping_dir = osp.join(self.graph_data_root, 'mag_mapping')
+        self.ogbn_mag_mapping_dir = osp.join(self.graph_data_root, 'mapping')
         self.title_path = osp.join(self.text_root, 'paperinfo/idx_title.tsv')
         self.abstract_path = osp.join(self.text_root, 'paperinfo/idx_abs.tsv')
 
@@ -67,9 +69,9 @@ class MagSemiStruct(SemiStructureKB):
         super(MagSemiStruct, self).__init__(**processed_data)
 
     def load_edge(self, edge_type):
-        edge_dir = osp.join(self.data_root, f"raw/relations/{edge_type}/edge.csv.gz")
-        edge_type_dir = osp.join(self.data_root, f"raw/relations/{edge_type}/edge_reltype.csv.gz")
-        num_dir = osp.join(self.data_root, f"raw/relations/{edge_type}/num-edge-list.csv.gz")
+        edge_dir = osp.join(self.graph_data_root, f"raw/relations/{edge_type}/edge.csv.gz")
+        edge_type_dir = osp.join(self.graph_data_root, f"raw/relations/{edge_type}/edge_reltype.csv.gz")
+        num_dir = osp.join(self.graph_data_root, f"raw/relations/{edge_type}/num-edge-list.csv.gz")
         edge = pd.read_csv(edge_dir, names=['src', 'dst'])
         
         edge_t = pd.read_csv(edge_type_dir, names=['type'])
@@ -105,8 +107,11 @@ class MagSemiStruct(SemiStructureKB):
                 column_nums = [full_attr[key].index(i) for i in reduced_attr[key]]
                 file = osp.join(self.mag_mapping_dir, key + '.txt.gz')
                 if not osp.exists(file):
-                    print(f'{key} data not found, please download from {self.external_link} to {file}')
-                    raise FileNotFoundError
+                    try:
+                        download_url(f'{self.mag_mapping_url}/{key}.txt.gz', self.mag_mapping_dir)
+                    except Exception as error:
+                        print(f'Download failed or {key} data not found, please download from {self.mag_mapping_url} to {file}')
+                        raise error
                 loaded_csv[key] = pd.read_csv(file, header=None, sep='\t', usecols=column_nums)
                 loaded_csv[key].columns = reduced_attr[key]
 
@@ -179,7 +184,7 @@ class MagSemiStruct(SemiStructureKB):
             title_abs_en['abstract'] = title_abs_en['abstract'].apply(decode_escapes)
         else:
             if not osp.exists(self.title_path):  
-                raw_text_path = download_url(self.url, self.text_root)
+                raw_text_path = download_url(self.ogbn_papers100M_url, self.text_root)
                 extract_zip(raw_text_path, self.text_root)
             print('start read title...')
             title = pd.read_csv(self.title_path, sep='\t', header=None)
@@ -299,6 +304,7 @@ class MagSemiStruct(SemiStructureKB):
         return doc 
     
     def process_raw(self):
+        NodePropPredDataset(name='ogbn-mag', root=self.graph_data_root)
         author_data, field_of_study_data, institution_data, paper_data = self.load_meta_data()
         paper_text_data = self.load_english_paper_text(paper_data['mag_id'].tolist())
 

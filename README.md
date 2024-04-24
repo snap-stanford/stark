@@ -65,8 +65,7 @@ Question answer pairs for the retrieval task are locally included in `data/{data
 
 ### Data of the Knowledge Bases
 
-- The knowledge base data of STaRK-Amazon and STaRK-Prime will be **automatically** downloaded and loaded. STaRK-Amazon may takes around an hour to process.
-- The knowledge base data of STaRK-MAG should be **manually** downloaded. Please download the data from [here](https://zenodo.org/records/2628216) and place them under the folder `data/mag/raw/ogbn_mag/mag_mapping`.
+The knowledge base data of all three benchmark will be **automatically** downloaded and loaded. STaRK-PrimeKG takes around 5 minutes to download and load the processed data. STaRK-Amazon and STaRK-MAG may takes around an hour to process from the raw data. 
 
 
 ## Reference 

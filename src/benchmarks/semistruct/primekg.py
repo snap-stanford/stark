@@ -24,6 +24,7 @@ class PrimeKGSemiStruct(SemiStructureKB):
                       'interacts with', 'linked to', 'expression present', 'expression absent']
     META_DATA = ['id', 'type', 'name', 'source', 'details']
     candidate_types = NODE_TYPES 
+    raw_data_url = 'https://drive.google.com/uc?id=1d__3yP6YZYjKWR2F9fGg-y1rW7-HJPpr'
 
     def __init__(self, root, save_path=None, renew=False):
         '''
@@ -55,9 +56,8 @@ class PrimeKGSemiStruct(SemiStructureKB):
     def _download_raw_data(self):
         output = 'raw.zip'
         if not osp.exists(osp.join(self.kg_path)):
-            url = 'https://drive.google.com/uc?id=1yNG7x79VPB-mmXX6ln-CIE3xP1iuOCB2'
             try:
-                gdown.download(url, osp.join(self.root, output), quiet=False)
+                gdown.download(self.raw_data_url, osp.join(self.root, output), quiet=False)
             except Exception as error:
                 print('Try upgrading your gdown package with `pip install gdown --upgrade`')
                 raise error
