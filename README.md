@@ -73,6 +73,7 @@ Question answer pairs for the retrieval task are locally included in `data/{data
 The knowledge base data of all three benchmark will be **automatically** downloaded and loaded. STaRK-PrimeKG takes around 5 minutes to download and load the processed data. STaRK-Amazon and STaRK-MAG may takes around an hour to process from the raw data. 
 
 
+
 ## Reference 
 
 ```
