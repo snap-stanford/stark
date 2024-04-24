@@ -21,8 +21,7 @@ def get_semistructured_data(name, root='data/'):
     
     if name == 'mag':
         save_path = osp.join(data_root, 'processed')
-        raw_data_dir = osp.join(data_root, 'raw')
         database = MagSemiStruct(root=data_root, 
-                                 schema_dir=osp.join(raw_data_dir, 'schema'),
+                                 schema_dir=osp.join(data_root, 'schema'),
                                  save_path=save_path)
     return database

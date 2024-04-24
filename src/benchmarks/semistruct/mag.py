@@ -39,6 +39,7 @@ class MagSemiStruct(SemiStructureKB):
                  save_path=None):
 
         self.root = root
+        self.raw_data_dir = osp.join(self.root, 'raw')
         self.graph_data_root = osp.join(self.root, 'raw', 'ogbn_mag')
         self.text_root = osp.join(self.root, 'raw', 'ogbn_papers100M')
 
@@ -304,7 +305,7 @@ class MagSemiStruct(SemiStructureKB):
         return doc 
     
     def process_raw(self):
-        NodePropPredDataset(name='ogbn-mag', root=self.graph_data_root)
+        NodePropPredDataset(name='ogbn-mag', root=self.raw_data_dir)
         author_data, field_of_study_data, institution_data, paper_data = self.load_meta_data()
         paper_text_data = self.load_english_paper_text(paper_data['mag_id'].tolist())
 
