@@ -1,10 +1,9 @@
-import os
 import os.path as osp
 import torch
 from typing import Any
 from src.models.model import ModelForSemiStructQA
 from src.models.vss import VSS
-from src.tools.api import get_ada_embeddings, get_ada_embedding
+from src.tools.api import get_ada_embeddings
 from src.tools.process_text import chunk_text
 
 
@@ -45,15 +44,7 @@ class MultiVSS(ModelForSemiStructQA):
                 query_id,
                 **kwargs: Any):
         
-        if query_id is None:
-            query_emb = get_ada_embedding(query)
-        else:
-            query_emb_path = osp.join(self.query_emb_dir, f'query_{query_id}.pt')
-            if os.path.exists(query_emb_path):
-                query_emb = torch.load(query_emb_path).view(1, -1)
-            else:
-                query_emb = get_ada_embedding(query)
-                torch.save(query_emb, query_emb_path)
+        query_emb = self._get_query_emb(query, query_id)
 
         initial_score_dict = self.parent_vss(query, query_id)
         node_ids = list(initial_score_dict.keys())

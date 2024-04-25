@@ -1,11 +1,9 @@
 import torch
 from typing import Any
-import os
-import os.path as osp
 
 from src.models.vss import VSS
 from src.models.model import ModelForSemiStructQA
-from src.tools.api import get_gpt_output, get_ada_embedding, complete_text_claude
+from src.tools.api import get_gpt_output, complete_text_claude
 import re
 
 
@@ -23,6 +21,7 @@ class LLMQA(ModelForSemiStructQA):
                  query_emb_dir, 
                  candidates_emb_dir,
                  sim_weight=0.1,
+                 max_cnt=3,
                  max_k=100
                  ):
         '''
@@ -39,6 +38,7 @@ class LLMQA(ModelForSemiStructQA):
         self.max_k = max_k
         self.model_name = model_name
         self.sim_weight = sim_weight
+        self.max_cnt = max_cnt
 
         self.query_emb_dir = query_emb_dir
         self.candidates_emb_dir = candidates_emb_dir
@@ -48,16 +48,6 @@ class LLMQA(ModelForSemiStructQA):
                 query,
                 query_id=None,
                 **kwargs: Any):
-        
-        if query_id is None:
-            query_emb = get_ada_embedding(query)
-        else:
-            query_emb_path = osp.join(self.query_emb_dir, f'query_{query_id}.pt')
-            if os.path.exists(query_emb_path):
-                query_emb = torch.load(query_emb_path).view(1, -1)
-            else:
-                query_emb = get_ada_embedding(query)
-                torch.save(query_emb, query_emb_path)
 
         initial_score_dict = self.parent_vss(query, query_id)
         node_ids = list(initial_score_dict.keys())
@@ -72,24 +62,29 @@ class LLMQA(ModelForSemiStructQA):
         for id, node_id in enumerate(top_k_node_ids):
             node_type = self.database.get_node_type_by_id(node_id)
             prompt = (
-                f'You are a helpful assistant that examines if a {node_type} satisfies a given query and assign a score from 0.0 to 1.0 based on the degree of satisfaction. If the {node_type} does not satisfy the query, the score should be 0.0. If there exists explicit and strong evidence supporting that {node_type} satisfies the query, the score should be 1.0. If partial evidence or weak evidence exists, the score should be between 0.0 and 1.0.\n'
+                f'You are a helpful assistant that examines if a {node_type} satisfies a given query and assign a score from 0.0 to 1.0. If the {node_type} does not satisfy the query, the score should be 0.0. If there exists explicit and strong evidence supporting that {node_type} satisfies the query, the score should be 1.0. If partial evidence or weak evidence exists, the score should be between 0.0 and 1.0.\n'
                 f'Here is the query:\n\"{query}\"\n'
                 f'Here is the information about the {node_type}:\n' +
                 self.database.get_doc_info(node_id, add_rel=True) + '\n\n' +
-                f'Please score the {node_type} based on how well it satisfies the query. Only output the floating point score without anything else. '
-                f'The numeric score of this {node_type} is: '
+                f'Please score the {node_type} based on how well it satisfies the query. ONLY output the floating point score WITHOUT anything else. '
+                f'Output: The numeric score of this {node_type} is: '
                 )
             redo_flag = True
-            while redo_flag:    
+            cnt = 0
+            while cnt < self.max_cnt and redo_flag:    
                 if 'gpt' in self.model_name:
                     answer = get_gpt_output(prompt, self.model_name)
                 elif 'claude' in self.model_name:
                     answer = complete_text_claude(prompt, self.model_name)
+                else:
+                    raise NotImplementedError(f'{self.model_name} not implemented')
+                cnt += 1
                 answer = find_floating_number(answer)
                 if len(answer) == 1:
-                    redo_flag = False
                     answer = answer[0]
                 else:
+                    if cnt >= self.max_cnt:
+                        return initial_score_dict
                     print('answer length not 1, redoing...')
             gpt_score = float(answer)
             sim_score = (cand_len - id) / cand_len

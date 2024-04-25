@@ -1,9 +1,7 @@
-import os
 import os.path as osp
 import torch    
 from typing import Any
 from src.models.model import ModelForSemiStructQA
-from src.tools.api import get_ada_embeddings, get_ada_embedding
 from tqdm import tqdm
 
 
@@ -46,15 +44,7 @@ class VSS(ModelForSemiStructQA):
                 query_id: int,
                 **kwargs: Any):
         
-        if query_id is None:
-            query_emb = get_ada_embeddings(query)
-        else:
-            query_emb_path = osp.join(self.query_emb_dir, f'query_{query_id}.pt')
-            if os.path.exists(query_emb_path):
-                query_emb = torch.load(query_emb_path).view(1, -1)
-            else:
-                query_emb = get_ada_embedding(query)
-                torch.save(query_emb, query_emb_path)
+        query_emb = self._get_query_emb(query, query_id)
         similarity = torch.matmul(query_emb.cuda(), 
                                   self.candidate_embs.cuda().T).cpu().view(-1)
         pred_dict = {self.candidate_ids[i]: similarity[i] for i in range(len(self.candidate_ids))}
