@@ -71,6 +71,25 @@ Question answer pairs for the retrieval task are locally included in `data/{data
 - **(Recommended) Instant downloading**: The knowledge base data of all three benchmark will be **automatically** downloaded and loaded when setting `download_processed=True`. 
 - **Process data from raw**: We also provided all of our preprocessing code for transparency. Therefore, you can process the raw data from scratch via setting `download_processed=False`. In this case, STaRK-PrimeKG takes around 5 minutes to download and load the processed data. STaRK-Amazon and STaRK-MAG may takes around an hour to process from the raw data.
 
+## 3) Evaluation on benchmark
+Run the python script to download query embedding and textual embedding `(text-embedding-ada-002)` for semi-structure knowledge base. 
+```bash
+python download_emb.py --dataset amazon --emb_dir emb/
+```
+
+Run the python script for evaluation.
+```bash
+python eval.py --dataset amazon --model VSS --emb_dir emb/ --output_dir output/ --save_pred
+```
+
+- `dataset`: the dataset to evaluate on, one of  `amazon`, `mag` or `primekg`.
+- `model`: the model to be evaluated, one of `VSS`, `MultiVSS`, `GPTQA`, `ClaudeQA`. 
+    - If you are using `GPTQA` or `ClaudeQA`, please specify API keys at `config/openai_api_key.txt` or `config/claude_api_key.txt`.
+    - Please specify the LLM name with argument `--llm_version`
+- `emb_dir`: the directory to store embeddings.
+- `output_dir`: the directory to store evaluation outputs.
+
+
 ## Reference 
 
 ```
