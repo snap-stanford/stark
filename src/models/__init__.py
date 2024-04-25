@@ -1,4 +1,3 @@
-import os.path as osp
 from .vss import  VSS
 from .llm_qa import LLMQA
 from .multi_vss import MultiVSS
@@ -26,6 +25,7 @@ def get_model(args, database):
                      model_name=args.llm_version,
                      query_emb_dir=args.query_emb_dir, 
                      candidates_emb_dir=args.node_emb_dir,
+                     max_cnt = args.max_try,
                      max_k=args.llm_topk
                      )
     raise NotImplementedError(f'{model_name} not implemented')
