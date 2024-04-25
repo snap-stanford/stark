@@ -2,26 +2,21 @@ import os.path as osp
 from src.benchmarks.semistruct import AmazonSemiStruct, PrimeKGSemiStruct, MagSemiStruct
 
 
-def get_semistructured_data(name, root='data/'):
+def get_semistructured_data(name, root='data/', download_processed=True):
     data_root = osp.join(root, name)
     if name == 'amazon':
         categories = ['Sports_and_Outdoors']
-        raw_data_dir = osp.join(data_root, 'raw')
-        save_path = osp.join(data_root, 'processed')
-        database = AmazonSemiStruct(categories, 
-                                    raw_data_dir=raw_data_dir,
-                                    save_path=save_path,
+        database = AmazonSemiStruct(root=data_root,
+                                    categories=categories,
                                     meta_link_types=['brand'],
                                     indirected=True,
+                                    download_processed=download_processed
                                     )
     if name == 'primekg':
-        save_path = osp.join(data_root, 'processed')
-        database = PrimeKGSemiStruct(root=data_root,
-                                     save_path=save_path)
+        database = PrimeKGSemiStruct(root=data_root, 
+                                     download_processed=download_processed)
     
     if name == 'mag':
-        save_path = osp.join(data_root, 'processed')
         database = MagSemiStruct(root=data_root, 
-                                 schema_dir=osp.join(data_root, 'schema'),
-                                 save_path=save_path)
+                                 download_processed=download_processed)
     return database

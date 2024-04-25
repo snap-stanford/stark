@@ -7,7 +7,8 @@ import torch
 import pandas as pd
 import numpy as np
 from langdetect import detect
-import sys
+import gdown
+import zipfile
 from ogb.nodeproppred import NodePropPredDataset
 from ogb.utils.url import download_url, extract_zip
 from src.tools.process_text import clean_data, compact_text, decode_escapes
@@ -19,8 +20,6 @@ class MagSemiStruct(SemiStructureKB):
     
     test_columns = ['title', 'abstract', 'text']
     candidate_types = ['paper']
-    ogbn_papers100M_url = 'https://snap.stanford.edu/ogb/data/misc/ogbn_papers100M/paperinfo.zip'
-    mag_mapping_url = 'https://zenodo.org/records/2628216/files'
 
     node_type_dict =  {0: 'author', 1: 'institution', 2: 'field_of_study', 3: 'paper'}
     edge_type_dict = {
@@ -33,15 +32,24 @@ class MagSemiStruct(SemiStructureKB):
                       'author': ['name'],
                       'institution': ['name'],
                       'field_of_study': ['name']}
-    def __init__(self, 
-                 root,
-                 schema_dir=None,
-                 save_path=None):
+    ogbn_papers100M_cache_url = 'https://drive.google.com/uc?id=1BWHBIukoVsCsJ2kCRPKbXXrh_rHdluIp'
+    ogbn_papers100M_url = 'https://snap.stanford.edu/ogb/data/misc/ogbn_papers100M/paperinfo.zip'
+    mag_mapping_url = 'https://zenodo.org/records/2628216/files'
+    processed_url = 'https://drive.google.com/uc?id=1zMf0xPNkITct5bPEXeWhI3V13W4UUSxA'
+    
+    def __init__(self, root, download_processed=True):
+        '''
+        Args:
+            root (str): root directory to store the dataset folder
+            download_processed (bool): whether to download the processed data
+        '''
 
-        self.root = root
+        self.root = root 
+        schema_dir=osp.join(root, 'schema'),                       
         self.raw_data_dir = osp.join(self.root, 'raw')
-        self.graph_data_root = osp.join(self.root, 'raw', 'ogbn_mag')
-        self.text_root = osp.join(self.root, 'raw', 'ogbn_papers100M')
+        self.processed_data_dir = osp.join(self.root, 'processed')  
+        self.graph_data_root = osp.join(self.raw_data_dir, 'ogbn_mag')
+        self.text_root = osp.join(self.raw_data_dir, 'ogbn_papers100M')
 
         # existing dirs/files
         self.schema_dir = schema_dir
@@ -51,22 +59,29 @@ class MagSemiStruct(SemiStructureKB):
         self.abstract_path = osp.join(self.text_root, 'paperinfo/idx_abs.tsv')
 
         # new files
-        self.save_path = osp.join(self.root, 'processed') if save_path is None else save_path
-        self.mag_metadata_cache_dir = osp.join(self.save_path, 'mag_cache')
-        self.paper100M_text_cache_dir = osp.join(self.save_path, 'paper100M_cache')
+        self.mag_metadata_cache_dir = osp.join(self.processed_data_dir, 'mag_cache')
+        self.paper100M_text_cache_dir = osp.join(self.processed_data_dir, 'paper100M_cache')
+        self.merged_filtered_path = osp.join(self.paper100M_text_cache_dir, 'idx_title_abs.tsv')
         os.makedirs(self.mag_metadata_cache_dir, exist_ok=True)
         os.makedirs(self.paper100M_text_cache_dir, exist_ok=True)
 
-        self.merged_filtered_path = osp.join(self.paper100M_text_cache_dir, 'idx_title_abs.tsv')
+        if not osp.exists(osp.join(self.processed_data_dir, 'node_info.pkl')) and download_processed:
+            print('Downloading processed data...')
+            processed_path = osp.join(self.root, 'processed.zip')
+            gdown.download(self.processed_url, processed_path, quiet=False)
+            with zipfile.ZipFile(processed_path, 'r') as zip_ref:
+                zip_ref.extractall(self.root)
+            os.remove(processed_path)
+            print('Downloaded processed data!')
 
-        if osp.exists(osp.join(self.save_path, 'node_info.pkl')):
-            print(f'loaded processed data from {self.save_path}!')
-            processed_data = load_files(self.save_path)
+        if osp.exists(osp.join(self.processed_data_dir, 'node_info.pkl')):
+            print(f'loaded processed data from {self.processed_data_dir}!')
+            processed_data = load_files(self.processed_data_dir)
         else:
             print('start processing raw data')
-            processed_data = self.process_raw()
-        processed_data.update({'node_type_dict': self.node_type_dict, 'edge_type_dict': self.edge_type_dict})
-        del processed_data['node_info_before_decode_escapes']
+            processed_data = self._process_raw()
+        processed_data.update({'node_type_dict': self.node_type_dict, 
+                               'edge_type_dict': self.edge_type_dict})
         super(MagSemiStruct, self).__init__(**processed_data)
 
     def load_edge(self, edge_type):
@@ -84,7 +99,7 @@ class MagSemiStruct(SemiStructureKB):
 
         return edge, edge_num
     
-    def load_meta_data(self, meta_columns=None):
+    def load_meta_data(self):
         
         mag_csv = {}
         if osp.exists(osp.join(self.mag_metadata_cache_dir, 'paper_data.csv')):
@@ -172,44 +187,51 @@ class MagSemiStruct(SemiStructureKB):
         paper_data.rename(columns={'id': 'id', 'PaperId': 'mag_id'}, inplace=True)
         return author_data, field_of_study_data, institution_data, paper_data
 
-    def load_english_paper_text(self, mag_ids):
+    def load_english_paper_text(self, mag_ids, download_cache=True):
         def is_english(text):
             try:
                 return detect(text) == 'en'
             except:
                 return False
-        if osp.exists(self.merged_filtered_path):
-            print('loading merged and filtered title and abstract (English)...')
-            title_abs_en = pd.read_csv(self.merged_filtered_path, sep='\t')
-            title_abs_en['title'] = title_abs_en['title'].apply(decode_escapes)
-            title_abs_en['abstract'] = title_abs_en['abstract'].apply(decode_escapes)
-        else:
-            if not osp.exists(self.title_path):  
-                raw_text_path = download_url(self.ogbn_papers100M_url, self.text_root)
-                extract_zip(raw_text_path, self.text_root)
-            print('start read title...')
-            title = pd.read_csv(self.title_path, sep='\t', header=None)
-            title.columns = ["mag_id", "title"]
-            print('filtering title in English...')
+        if not osp.exists(self.merged_filtered_path):
+            if download_cache:
+                # We provided cache here to avoid processing the large file for a long time
+                try:
+                    gdown.download(self.ogbn_papers100M_cache_url, 
+                                   self.merged_filtered_path, quiet=False)
+                except Exception as error:
+                    print('Try upgrading your gdown package with `pip install gdown --upgrade`')
+                    raise error
+            else:
+                if not osp.exists(self.title_path):  
+                    raw_text_path = download_url(self.ogbn_papers100M_url, self.text_root)
+                    extract_zip(raw_text_path, self.text_root)
+                print('start read title...')
+                title = pd.read_csv(self.title_path, sep='\t', header=None)
+                title.columns = ["mag_id", "title"]
+                print('filtering title in English...')
 
-            # filter the title that's in mag_ids
-            title = title[title['mag_id'].apply(lambda x: x in mag_ids)]
-            title_en = title[title['title'].apply(is_english)]
+                # filter the title that's in mag_ids
+                title = title[title['mag_id'].apply(lambda x: x in mag_ids)]
+                title_en = title[title['title'].apply(is_english)]
 
-            print('start read abstract...')
-            abstract = pd.read_csv(self.abstract_path, sep='\t', header=None)
-            abstract.columns = ["mag_id", "abstract"]
-            print('filtering abstract in English...')
+                print('start read abstract...')
+                abstract = pd.read_csv(self.abstract_path, sep='\t', header=None)
+                abstract.columns = ["mag_id", "abstract"]
+                print('filtering abstract in English...')
 
-            abstract = abstract[abstract['mag_id'].apply(lambda x: x in mag_ids)]
-            abstract_en = abstract[abstract['abstract'].apply(is_english)]
+                abstract = abstract[abstract['mag_id'].apply(lambda x: x in mag_ids)]
+                abstract_en = abstract[abstract['abstract'].apply(is_english)]
 
-            print('start merging title and abstract...')
-            title_abs_en = pd.merge(title, abs, how="outer", on="mag_id", sort=True)
-            title_abs_en.to_csv(self.merged_filtered_path, sep="\t", header=True, index=False)
-            
-        print('done!')
+                print('start merging title and abstract...')
+                title_abs_en = pd.merge(title, abs, how="outer", on="mag_id", sort=True)
+                title_abs_en.to_csv(self.merged_filtered_path, sep="\t", header=True, index=False)
+                
+        print('loading merged and filtered title and abstract (English)...')
+        title_abs_en = pd.read_csv(self.merged_filtered_path, sep='\t')
         title_abs_en.columns = ['mag_id', 'title', 'abstract']
+        print('done!')
+
         return title_abs_en
 
     def get_map(self, df):
@@ -304,11 +326,12 @@ class MagSemiStruct(SemiStructureKB):
             doc = '- relations:\n' + doc
         return doc 
     
-    def process_raw(self):
+    def _process_raw(self):
         NodePropPredDataset(name='ogbn-mag', root=self.raw_data_dir)
         author_data, field_of_study_data, institution_data, paper_data = self.load_meta_data()
         paper_text_data = self.load_english_paper_text(paper_data['mag_id'].tolist())
 
+        print('precessing graph data...')
         author_id_to_mag = {row['id']: row['mag_id'] for _, row in author_data.iterrows()}
         institution_id_to_mag = {row['id']: row['mag_id'] for _, row in institution_data.iterrows()}
         field_of_study_id_to_mag = {row['id']: row['mag_id'] for _, row in field_of_study_data.iterrows()}
@@ -494,7 +517,6 @@ class MagSemiStruct(SemiStructureKB):
             }
 
         print('start saving processed data')
-        if self.save_path is not None:
-            save_files(save_path=self.save_path, **processed_data)
+        save_files(save_path=self.processed_data_dir, **processed_data)
 
         return processed_data

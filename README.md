@@ -58,10 +58,8 @@ qa_dataset = get_qa_dataset(dataset_name)
 idx_split = qa_dataset.get_idx_split()
 
 # Load the knowledge base
-kb = get_semistructured_data(dataset_name)
+kb = get_semistructured_data(dataset_name, download_processed=True)
 ```
-
-
 
 ### Data of the Retrieval Task
 
@@ -70,9 +68,8 @@ Question answer pairs for the retrieval task are locally included in `data/{data
 
 ### Data of the Knowledge Bases
 
-The knowledge base data of all three benchmark will be **automatically** downloaded and loaded. STaRK-PrimeKG takes around 5 minutes to download and load the processed data. STaRK-Amazon and STaRK-MAG may takes around an hour to process from the raw data. 
-
-
+- **(Recommended) Instant downloading**: The knowledge base data of all three benchmark will be **automatically** downloaded and loaded when setting `download_processed=True`. 
+- **Process data from raw**: We also provided all of our preprocessing code for transparency. Therefore, you can process the raw data from scratch via setting `download_processed=False`. In this case, STaRK-PrimeKG takes around 5 minutes to download and load the processed data. STaRK-Amazon and STaRK-MAG may takes around an hour to process from the raw data.
 
 ## Reference 
 

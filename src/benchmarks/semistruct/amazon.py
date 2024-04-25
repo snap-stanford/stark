@@ -7,6 +7,8 @@ import torch
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+import gdown
+import zipfile
 from ogb.utils.url import download_url
 from src.benchmarks.semistruct.knowledge_base import SemiStructureKB
 from src.tools.process_text import clean_data, compact_text
@@ -50,38 +52,54 @@ class AmazonSemiStruct(SemiStructureKB):
     candidate_types = ['product']
     node_attr_dict = {'product': ['title', 'dimensions', 'weight', 'description', 'features', 'reviews', 'Q&A'],
                        'brand': ['brand_name']}
-    
+    processed_url = 'https://drive.google.com/uc?id=1_NlQdMR9thVAZb5Jni9E-ukMeq2VWOvl'
+
     def __init__(self, 
+                 root,
                  categories: list, 
-                 path_qa=None,
-                 path_review=None,
-                 raw_data_dir=None, 
-                 save_path=None, 
-                 meta_link_types=None,
+                 meta_link_types=['brand'],
                  max_entries=25,
-                 indirected=True):
-        if path_qa is None or path_review is None:
-            path_review = path_qa = raw_data_dir
+                 indirected=True,
+                 download_processed=True):
         '''
             Args: 
+                root (str): root directory to store the data
                 categories (list): product categories
-                raw_data_dir (Path or str): Amazon QA data dir and review data dir
-                save_path (Path or str): dir that stores processed data
                 meta_link_types (list): a list which may contain entries in node info 
                                         that used to consruct meta links, e.g. ['category', 'brand'] 
                                         will construct entity nodes of catrgory and brand which link 
                                         to corresponding nodes
+                max_entries (int): maximum number of review & qa entries to show in the description
+                indirected (bool): make the graph indirected
         '''
+
+        self.root = root
         self.max_entries = max_entries 
+        self.raw_data_dir = osp.join(root, 'raw')
+        self.processed_data_dir = osp.join(root, 'processed')
+        os.makedirs(self.raw_data_dir, exist_ok=True)
+        os.makedirs(self.processed_data_dir, exist_ok=True)
+
         # construct the graph based on link info in the raw data
-        cache_path = None if (save_path is None or meta_link_types is None) else \
-            osp.join(save_path, 'cache', '-'.join(meta_link_types))
+        cache_path = None if meta_link_types is None else \
+                     osp.join(self.processed_data_dir, 'cache', '-'.join(meta_link_types))
+        
+        if not osp.exists(osp.join(self.processed_data_dir, 'node_info.pkl')) and download_processed:
+            print('Downloading processed data...')
+            processed_path = osp.join(self.root, 'processed.zip')
+            gdown.download(self.processed_url, processed_path, quiet=False)
+            with zipfile.ZipFile(processed_path, 'r') as zip_ref:
+                zip_ref.extractall(self.root)
+            os.remove(processed_path)
+            print('Downloaded processed data!')
+
         if not (cache_path is None) and osp.exists(cache_path):
             print(f'Load cached graph with meta link types {meta_link_types}')
             processed_data = load_files(cache_path)
         else:
-            processed_data = self.process_raw(categories, path_qa, path_review, save_path)
-            if meta_link_types: # custumize the graph by adding meta links
+            processed_data = self._process_raw(categories)
+            if meta_link_types: 
+                # customize the graph by adding meta links
                 processed_data = self.post_process(processed_data, meta_link_types=meta_link_types, cache_path=cache_path)
         super(AmazonSemiStruct, self).__init__(**processed_data, indirected=indirected)
     
@@ -224,7 +242,7 @@ class AmazonSemiStruct(SemiStructureKB):
             doc = '- relations:\n' + doc
         return doc
     
-    def process_raw(self, categories, path_qa, path_review, save_path=None):
+    def _process_raw(self, categories):
         if 'all' in categories:
             review_categories = self.REVIEW_CATEGORIES
             qa_categories = self.QA_CATEGORIES
@@ -232,9 +250,9 @@ class AmazonSemiStruct(SemiStructureKB):
             qa_categories = review_categories = categories
             assert len(set(categories) - self.COMMON) == 0, f'invalid categories exist'
         
-        if not save_path is None and osp.exists(osp.join(save_path, 'node_info.pkl')):
-            print(f'Load processed data from {save_path}')
-            loaded_files = load_files(save_path)
+        if osp.exists(osp.join(self.processed_data_dir, 'node_info.pkl')):
+            print(f'Load processed data from {self.processed_data_dir}')
+            loaded_files = load_files(self.processed_data_dir)
             loaded_files.update(
                 {'node_types': torch.zeros(len(loaded_files['node_info'])),
                  'node_type_dict': {0: 'product'}})
@@ -243,25 +261,25 @@ class AmazonSemiStruct(SemiStructureKB):
         print(f'Check data downloading...')
         for category in review_categories:
             review_header = 'https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_v2'
-            download_url(f'{review_header}/categoryFiles/{category}.json.gz', path_review)
-            download_url(f'{review_header}/metaFiles2/meta_{category}.json.gz', path_review)
+            download_url(f'{review_header}/categoryFiles/{category}.json.gz', self.raw_data_dir)
+            download_url(f'{review_header}/metaFiles2/meta_{category}.json.gz', self.raw_data_dir)
         for category in qa_categories:
             qa_header = 'https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon/qa'
-            download_url(f'{qa_header}/qa_{category}.json.gz', path_qa)
+            download_url(f'{qa_header}/qa_{category}.json.gz', self.raw_data_dir)
             
-        if save_path is None or not osp.exists(osp.join(save_path, 'node_info.pkl')):
+        if not osp.exists(osp.join(self.processed_data_dir, 'node_info.pkl')):
             print('Loading data... It might take a while')
             # read amazon QA data
-            df_qa = pd.concat([read_qa(osp.join(path_qa, f'qa_{category}.json.gz'))
+            df_qa = pd.concat([read_qa(osp.join(self.raw_data_dir, f'qa_{category}.json.gz'))
                                for category in qa_categories])[['asin'] + self.qa_columns]
             
             # read amazon review data
-            df_review = pd.concat([read_review(osp.join(path_review, f'{category}.json.gz')) 
+            df_review = pd.concat([read_review(osp.join(self.raw_data_dir, f'{category}.json.gz')) 
                                    for category in review_categories])[['asin'] + self.review_columns]
             # read amazon meta data from amazon review & amazon kdd
             meta_df_lst = []
             for category in review_categories:
-                cat_review = read_review(osp.join(path_review, f'meta_{category}.json.gz'))
+                cat_review = read_review(osp.join(self.raw_data_dir, f'meta_{category}.json.gz'))
                 cat_review.insert(0, 'global_category', category.replace('_', ' '))
                 meta_df_lst.append(cat_review)
             df_ucsd_meta = pd.concat(meta_df_lst)
@@ -299,9 +317,8 @@ class AmazonSemiStruct(SemiStructureKB):
                 'edge_types': edge_types,
                 'edge_type_dict': edge_type_dict}
             
-            if save_path is not None:
-                print(f'Saving to {save_path}...')
-                save_files(save_path=save_path, **processed_data)
+            print(f'Saving to {self.processed_data_dir}...')
+            save_files(save_path=self.processed_data_dir, **processed_data)
 
         processed_data.update({'node_types': torch.zeros(len(processed_data['node_info'])),
                                'node_type_dict': {0: 'product'}})
