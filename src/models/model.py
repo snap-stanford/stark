@@ -1,13 +1,15 @@
 import torch.nn as nn
 from typing import Any, Union
 import torch
+import os
+import os.path as osp
 from torchmetrics.functional.retrieval import retrieval_hit_rate, \
                                               retrieval_reciprocal_rank, \
                                               retrieval_recall, retrieval_precision, \
                                               retrieval_average_precision, \
                                               retrieval_normalized_dcg, \
                                               retrieval_r_precision
-
+from src.tools.api import get_ada_embedding
 
 
 class ModelForSemiStructQA(nn.Module):
@@ -17,6 +19,7 @@ class ModelForSemiStructQA(nn.Module):
         self.database = database
         self.candidate_ids = database.candidate_ids
         self.num_candidates = database.num_candidates
+        self.query_emb_dict = {}
     
     def forward(self, 
                 query: Union[str, list], 
@@ -33,6 +36,25 @@ class ModelForSemiStructQA(nn.Module):
             pred_answer (Union[str, int, list]): predicted answer or a list of answer strings
         '''
         raise NotImplementedError
+    
+    def _get_query_emb(self, query: str, query_id: int):
+        if query_id is None:
+            query_emb = get_ada_embedding(query)
+        elif len(self.query_emb_dict) > 0:
+            query_emb = self.query_emb_dict[query_id]
+        else:
+            query_emb_dic_path = osp.join(self.query_emb_dir, 'query_emb_dict.pt')
+            if os.path.exists(query_emb_dic_path):
+                self.query_emb_dict = torch.load(query_emb_dic_path)
+                query_emb = self.query_emb_dict[query_id]
+            else:
+                query_emb_dir = osp.join(self.query_emb_dir, 'query_embs')
+                if not os.path.exists(query_emb_dir):
+                    os.makedirs(query_emb_dir)
+                query_emb_path = osp.join(query_emb_dir, f'query_{query_id}.pt')
+                query_emb = get_ada_embedding(query)
+                torch.save(query_emb, query_emb_path)
+        return query_emb
     
     def evaluate(self, 
                  pred_dict: dict, 
