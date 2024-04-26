@@ -4,7 +4,7 @@
 </h1>
 
 
-<div align="center">
+<div align="left">
 
 [![](https://img.shields.io/badge/paper-pink?style=plastic&logo=GitBook)](https://arxiv.org/abs/2404.13207)
 [![](https://img.shields.io/badge/-github-green?style=plastic&logo=github)](https://github.com/snap-stanford/stark) 
