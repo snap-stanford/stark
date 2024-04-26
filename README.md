@@ -1,5 +1,5 @@
 
-<h1 align="center">
+<h1 align="left">
     STaRK: Benchmarking LLM Retrieval on Textual and Relational Knowledge Bases
 </h1>
 
