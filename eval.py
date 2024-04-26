@@ -66,9 +66,9 @@ if __name__ == "__main__":
         else osp.join(output_dir, f"eval_metrics_{args.split}_{args.test_ratio}.json")
     )
 
-    database = get_semistructured_data(args.dataset)
+    kb = get_semistructured_data(args.dataset)
     qa_dataset = get_qa_dataset(args.dataset)
-    model = get_model(args, database)
+    model = get_model(args, kb)
 
     split_idx = qa_dataset.get_idx_split(test_ratio=args.test_ratio)
 

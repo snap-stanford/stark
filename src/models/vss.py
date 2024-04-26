@@ -8,18 +8,18 @@ from tqdm import tqdm
 class VSS(ModelForSemiStructQA):
     
     def __init__(self, 
-                 database,
+                 kb,
                  query_emb_dir, 
                  candidates_emb_dir):
         '''
         Vector Similarity Search
         Args:
+            kb (src.benchmarks.semistruct.SemiStruct): kb
             query_emb_dir (str): directory to query embeddings
             candidates_emb_dir (str): directory to candidate embeddings
-            database (src.benchmarks.semistruct.SemiStruct): database
         '''
         
-        super(VSS, self).__init__(database)
+        super(VSS, self).__init__(kb)
         self.query_emb_dir = query_emb_dir
         self.candidates_emb_dir = candidates_emb_dir
 

@@ -14,11 +14,11 @@ from src.tools.api import get_openai_embedding
 
 class ModelForSemiStructQA(nn.Module):
     
-    def __init__(self, database):
+    def __init__(self, kb):
         super(ModelForSemiStructQA, self).__init__()
-        self.database = database
-        self.candidate_ids = database.candidate_ids
-        self.num_candidates = database.num_candidates
+        self.kb = kb
+        self.candidate_ids = kb.candidate_ids
+        self.num_candidates = kb.num_candidates
         self.query_emb_dict = {}
     
     def forward(self, 
@@ -30,10 +30,10 @@ class ModelForSemiStructQA(nn.Module):
         Args:
             query (Union[str, list]): query string or a list of query strings
             candidates (Union[list, None]): a list of candidate ids (optional)
-            query_idx (Union[int, list, None]): query index (optional)
+            query_id (Union[int, list, None]): query index (optional)
             
         Returns:
-            pred_answer (Union[str, int, list]): predicted answer or a list of answer strings
+            pred_dict (dict): a dictionary of predicted scores or answer ids
         '''
         raise NotImplementedError
     

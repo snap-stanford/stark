@@ -10,7 +10,7 @@ from src.tools.process_text import chunk_text
 class MultiVSS(ModelForSemiStructQA):
     
     def __init__(self, 
-                 database,
+                 kb,
                  query_emb_dir,
                  candidates_emb_dir,
                  chunk_emb_dir,
@@ -20,15 +20,14 @@ class MultiVSS(ModelForSemiStructQA):
         '''
         Multivector Vector Similarity Search
         Args:
+            kb (src.benchmarks.semistruct.SemiStruct): kb
             query_emb_dir (str): directory to query embeddings
             candidates_emb_dir (str): directory to candidate embeddings
-            target_name (str): target name of the query and candidate embeddings.
-                               If None, it will be inferred from the first file
-            database (src.benchmarks.semistruct.SemiStruct): database
+            chunk_emb_dir (str): directory to chunk embeddings
         '''
         
-        super().__init__(database)
-        self.database = database
+        super().__init__(kb)
+        self.kb = kb
         self.aggregate = aggregate # 'max', 'avg', 'top{k}_avg'
 
         self.max_k = max_k
@@ -37,7 +36,7 @@ class MultiVSS(ModelForSemiStructQA):
         self.query_emb_dir = query_emb_dir
         self.chunk_emb_dir = chunk_emb_dir
         self.candidates_emb_dir = candidates_emb_dir
-        self.parent_vss = VSS(database, query_emb_dir, candidates_emb_dir)
+        self.parent_vss = VSS(kb, query_emb_dir, candidates_emb_dir)
 
     def forward(self, 
                 query,
@@ -58,7 +57,7 @@ class MultiVSS(ModelForSemiStructQA):
 
         pred_dict = {}
         for node_id in top_k_node_ids:
-            doc = self.database.get_doc_info(node_id, add_rel=True, compact=True)
+            doc = self.kb.get_doc_info(node_id, add_rel=True, compact=True)
             chunks = chunk_text(doc, chunk_size=self.chunk_size)
             chunk_path = osp.join(self.chunk_emb_dir, f'{node_id}_size={self.chunk_size}.pt')
             if osp.exists(chunk_path):
