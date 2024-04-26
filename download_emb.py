@@ -10,7 +10,7 @@ import gdown
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", default="amazon")
-    parser.add_argument("--emb_dir", type=str, required=True)
+    parser.add_argument("--emb_dir", default="emb", type=str)
     return parser.parse_args()
 
 if __name__ == "__main__":

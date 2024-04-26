@@ -1,5 +1,5 @@
 import torch
-from src.tools.api import get_ada_embedding
+from src.tools.api import get_openai_embedding
 
 
 def get_top_k_indices(emb: torch.FloatTensor, 
@@ -35,8 +35,8 @@ def sentence_emb_similarity(s1, s2):
         s2 (str): sentence 2
     '''
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    emb1 = get_ada_embedding(s1).to(device)
-    emb2 = get_ada_embedding(s2).to(device)
+    emb1 = get_openai_embedding(s1).to(device)
+    emb2 = get_openai_embedding(s2).to(device)
     return torch.matmul(emb1, emb2.T).view(-1).cpu()
 
 

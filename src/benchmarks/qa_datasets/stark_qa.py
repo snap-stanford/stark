@@ -42,6 +42,13 @@ class STaRKDataset:
             split_idx['test'] = split_idx['test'][:int(len(split_idx['test']) * test_ratio)]
         return split_idx
 
+    def get_query_by_qid(self, q_id):
+        '''
+        Return the query by query id.
+        '''
+        row = self.data[self.data['id'] == q_id].iloc[0]
+        return row['query']
+        
     def get_subset(self, split):
         '''
         Return a subset of the dataset.

@@ -13,7 +13,7 @@ from src.tools.args import merge_args, load_args
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", default="amazon")
+    parser.add_argument("--dataset", default="amazon", choices=[])
     parser.add_argument(
         "--model", default="VSS", choices=["VSS", "MultiVSS", "GPTQA", "ClaudeQA"]
     )

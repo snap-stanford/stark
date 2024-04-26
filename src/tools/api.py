@@ -168,7 +168,7 @@ def complete_texts_claude(texts: list, model="claude-2.1", temperature=0.5, n_ma
     return results
 
 
-def get_ada_embedding(text, model="text-embedding-ada-002"):
+def get_openai_embedding(text, model="text-embedding-ada-002"):
     assert isinstance(text, str), f'text must be str, but got {type(text)}'
     assert len(text) > 0, f'text to be embedded should be non-empty'
     if openai.__version__.startswith('0.'):
@@ -235,7 +235,7 @@ def get_ada_embedding(text, model="text-embedding-ada-002"):
     return emb
 
 
-def get_ada_embeddings(texts, n_max_nodes=5, model="text-embedding-ada-002"):
+def get_openai_embeddings(texts, n_max_nodes=5, model="text-embedding-ada-002"):
     """ 
     Get embeddings for a list of texts.
     """
@@ -243,7 +243,7 @@ def get_ada_embeddings(texts, n_max_nodes=5, model="text-embedding-ada-002"):
     assert all([len(s) > 0 for s in texts]), f'every string in the `texts` list to be embedded should be non-empty'
 
     processes = min(len(texts), n_max_nodes)
-    ada_encoder = partial(get_ada_embedding, model=model)
+    ada_encoder = partial(get_openai_embedding, model=model)
     with multiprocessing.Pool(processes=processes) as pool:
         results = pool.map(ada_encoder, texts)
 
@@ -385,4 +385,6 @@ def get_gpt_outputs(texts: list, model="gpt-4-1106-preview", temperature=0.5, js
     with multiprocessing.Pool(processes=processes) as pool:
         results = pool.map(partial_func, texts)
     return results
+
+
 

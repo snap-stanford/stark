@@ -3,7 +3,7 @@ import torch
 from typing import Any
 from src.models.model import ModelForSemiStructQA
 from src.models.vss import VSS
-from src.tools.api import get_ada_embeddings
+from src.tools.api import get_openai_embeddings
 from src.tools.process_text import chunk_text
 
 
@@ -64,7 +64,7 @@ class MultiVSS(ModelForSemiStructQA):
             if osp.exists(chunk_path):
                 chunk_embs = torch.load(chunk_path)
             else:
-                chunk_embs = get_ada_embeddings(chunks)
+                chunk_embs = get_openai_embeddings(chunks)
                 torch.save(chunk_embs, chunk_path)
             print(f'chunk_embs.shape: {chunk_embs.shape}')
 

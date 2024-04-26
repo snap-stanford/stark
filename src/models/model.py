@@ -9,7 +9,7 @@ from torchmetrics.functional.retrieval import retrieval_hit_rate, \
                                               retrieval_average_precision, \
                                               retrieval_normalized_dcg, \
                                               retrieval_r_precision
-from src.tools.api import get_ada_embedding
+from src.tools.api import get_openai_embedding
 
 
 class ModelForSemiStructQA(nn.Module):
@@ -39,7 +39,7 @@ class ModelForSemiStructQA(nn.Module):
     
     def _get_query_emb(self, query: str, query_id: int):
         if query_id is None:
-            query_emb = get_ada_embedding(query)
+            query_emb = get_openai_embedding(query)
         elif len(self.query_emb_dict) > 0:
             query_emb = self.query_emb_dict[query_id]
         else:
@@ -52,7 +52,7 @@ class ModelForSemiStructQA(nn.Module):
                 if not os.path.exists(query_emb_dir):
                     os.makedirs(query_emb_dir)
                 query_emb_path = osp.join(query_emb_dir, f'query_{query_id}.pt')
-                query_emb = get_ada_embedding(query)
+                query_emb = get_openai_embedding(query)
                 torch.save(query_emb, query_emb_path)
         return query_emb
     
