@@ -16,6 +16,7 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
 
+    emb_model = 'text-embedding-ada-002'
     query_emb_token = {'amazon': '1-zyI84MMh6r66-faOFSc2rWTeIUw3VZW',
                        'mag': '1HSfUrSKBa7mJbECFbnKPQgd6HSsI8spT',
                        'primekg': '1MshwJttPZsHEM2cKA5T13SIrsLeBEdyU'}
@@ -23,12 +24,11 @@ if __name__ == "__main__":
                       'mag': '1oVdScsDRuEpCFXtWQcTAx7ycvOggWF17',
                       'primekg': '16EJvCMbgkVrQ0BuIBvLBp-BYPaye-Edy'}
 
-    emb_dir = args.emb_dir
     dataset = args.dataset
     query_emb_url = 'https://drive.google.com/uc?id=' + query_emb_token[dataset]
     node_emb_url = 'https://drive.google.com/uc?id=' + node_emb_token[dataset]
 
-    emb_dir = osp.join(emb_dir, dataset)
+    emb_dir = osp.join(args.emb_dir, dataset, emb_model)
     query_emb_dir = osp.join(emb_dir, "query")
     node_emb_dir = osp.join(emb_dir, "doc")
     os.makedirs(query_emb_dir, exist_ok=True)

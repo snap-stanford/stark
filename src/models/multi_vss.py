@@ -14,6 +14,7 @@ class MultiVSS(ModelForSemiStructQA):
                  query_emb_dir,
                  candidates_emb_dir,
                  chunk_emb_dir,
+                 emb_model='text-embedding-ada-002',
                  aggregate='top3_avg',
                  max_k=50,
                  chunk_size=256):
@@ -32,11 +33,11 @@ class MultiVSS(ModelForSemiStructQA):
 
         self.max_k = max_k
         self.chunk_size = chunk_size
-
+        self.emb_model = emb_model
         self.query_emb_dir = query_emb_dir
         self.chunk_emb_dir = chunk_emb_dir
         self.candidates_emb_dir = candidates_emb_dir
-        self.parent_vss = VSS(kb, query_emb_dir, candidates_emb_dir)
+        self.parent_vss = VSS(kb, query_emb_dir, candidates_emb_dir, emb_model=emb_model)
 
     def forward(self, 
                 query,
@@ -52,7 +53,8 @@ class MultiVSS(ModelForSemiStructQA):
         # get the ids with top k highest scores
         top_k_idx = torch.topk(torch.FloatTensor(node_scores),
                                min(self.max_k, len(node_scores)),
-                               dim=-1).indices.view(-1).tolist()
+                               dim=-1
+                               ).indices.view(-1).tolist()
         top_k_node_ids = [node_ids[i] for i in top_k_idx]
 
         pred_dict = {}
@@ -63,7 +65,8 @@ class MultiVSS(ModelForSemiStructQA):
             if osp.exists(chunk_path):
                 chunk_embs = torch.load(chunk_path)
             else:
-                chunk_embs = get_openai_embeddings(chunks)
+                chunk_embs = get_openai_embeddings(chunks, 
+                                                   model=self.emb_model)
                 torch.save(chunk_embs, chunk_path)
             print(f'chunk_embs.shape: {chunk_embs.shape}')
 

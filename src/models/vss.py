@@ -10,7 +10,8 @@ class VSS(ModelForSemiStructQA):
     def __init__(self, 
                  kb,
                  query_emb_dir, 
-                 candidates_emb_dir):
+                 candidates_emb_dir,
+                 emb_model='text-embedding-ada-002'):
         '''
         Vector Similarity Search
         Args:
@@ -20,6 +21,7 @@ class VSS(ModelForSemiStructQA):
         '''
         
         super(VSS, self).__init__(kb)
+        self.emb_model = emb_model
         self.query_emb_dir = query_emb_dir
         self.candidates_emb_dir = candidates_emb_dir
 
@@ -44,8 +46,12 @@ class VSS(ModelForSemiStructQA):
                 query_id: int,
                 **kwargs: Any):
         
-        query_emb = self._get_query_emb(query, query_id)
+        query_emb = self._get_query_emb(query, 
+                                        query_id, 
+                                        emb_model=self.emb_model
+                                        )
         similarity = torch.matmul(query_emb.cuda(), 
-                                  self.candidate_embs.cuda().T).cpu().view(-1)
+                                  self.candidate_embs.cuda().T
+                                  ).cpu().view(-1)
         pred_dict = {self.candidate_ids[i]: similarity[i] for i in range(len(self.candidate_ids))}
         return pred_dict

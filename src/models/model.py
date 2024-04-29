@@ -37,14 +37,16 @@ class ModelForSemiStructQA(nn.Module):
         '''
         raise NotImplementedError
     
-    def _get_query_emb(self, query: str, query_id: int):
+    def _get_query_emb(self, query: str, query_id: int, 
+                       emb_model: str = 'text-embedding-ada-002'):
         if query_id is None:
-            query_emb = get_openai_embedding(query)
+            query_emb = get_openai_embedding(query, model=emb_model)
         elif len(self.query_emb_dict) > 0:
             query_emb = self.query_emb_dict[query_id]
         else:
             query_emb_dic_path = osp.join(self.query_emb_dir, 'query_emb_dict.pt')
             if os.path.exists(query_emb_dic_path):
+                print(f'Load query embeddings from {query_emb_dic_path}')
                 self.query_emb_dict = torch.load(query_emb_dic_path)
                 query_emb = self.query_emb_dict[query_id]
             else:
@@ -52,7 +54,7 @@ class ModelForSemiStructQA(nn.Module):
                 if not os.path.exists(query_emb_dir):
                     os.makedirs(query_emb_dir)
                 query_emb_path = osp.join(query_emb_dir, f'query_{query_id}.pt')
-                query_emb = get_openai_embedding(query)
+                query_emb = get_openai_embedding(query, model=emb_model)
                 torch.save(query_emb, query_emb_path)
         return query_emb
     

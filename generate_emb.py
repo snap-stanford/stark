@@ -19,8 +19,9 @@ from src.tools.api import get_openai_embeddings
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', default='amazon')
-    parser.add_argument('--mode', default='doc', choices=['doc', 'query'])
+    parser.add_argument('--dataset', default='amazon', 
+                        choices=['amazon', 'primekg', 'mag']
+                        )
     parser.add_argument('--emb_model', default='text-embedding-ada-002', 
                         choices=[
                             'text-embedding-ada-002', 
@@ -28,7 +29,8 @@ def parse_args():
                             'text-embedding-3-large'
                             ]
                         )
-    parser.add_argument("--emb_dir", default="emb", type=str)
+    parser.add_argument('--mode', default='doc', choices=['doc', 'query'])
+    parser.add_argument("--emb_dir", default="emb/", type=str)
     parser.add_argument('--add_rel', action='store_true', default=False, 
                         help='add relation to the text')
     parser.add_argument('--compact', action='store_true', default=False, 
@@ -39,7 +41,7 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    emb_dir = osp.join(args.emb_dir, args.dataset, args.mode)
+    emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, args.mode)
     os.makedirs(emb_dir, exist_ok=True)
 
     if args.mode == 'doc':
