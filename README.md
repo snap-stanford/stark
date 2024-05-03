@@ -8,7 +8,8 @@
 
 [![](https://img.shields.io/badge/paper-pink?style=plastic&logo=GitBook)](https://arxiv.org/abs/2404.13207)
 [![](https://img.shields.io/badge/-github-green?style=plastic&logo=github)](https://github.com/snap-stanford/stark) 
-[![](https://img.shields.io/badge/-Linkedin-blue?style=plastic&logo=Linkedin)](https://www.linkedin.com/posts/shirley-wu-bb1751199_knowledgegraphs-informationretrieval-research-activity-7189163931087613952-wJLQ?utm_source=share&utm_medium=member_desktop) 
+[![](https://img.shields.io/badge/-Linkedin-blue?style=plastic&logo=Linkedin)](https://www.linkedin.com/posts/leskovec_reduce-llm-hallucinations-with-rag-over-textual-activity-7190745116339302401-da4n?utm_source=share&utm_medium=member_desktop) 
+[![](https://img.shields.io/badge/-Twitter-cyan?style=plastic&logo=Twitter)](https://twitter.com/ShirleyYXWu/status/1784970920383402433) 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 </div>
 
