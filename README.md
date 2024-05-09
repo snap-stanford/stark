@@ -10,6 +10,7 @@
 [![](https://img.shields.io/badge/-github-green?style=plastic&logo=github)](https://github.com/snap-stanford/stark) 
 [![](https://img.shields.io/badge/-Linkedin-blue?style=plastic&logo=Linkedin)](https://www.linkedin.com/posts/leskovec_reduce-llm-hallucinations-with-rag-over-textual-activity-7190745116339302401-da4n?utm_source=share&utm_medium=member_desktop) 
 [![](https://img.shields.io/badge/-Twitter-cyan?style=plastic&logo=Twitter)](https://twitter.com/ShirleyYXWu/status/1784970920383402433) 
+[![](https://img.shields.io/badge/-Medium-black?style=plastic&logo=Medium)](https://medium.com/@multiplatform.ai/researchers-from-stanford-and-amazon-unveil-stark-a-comprehensive-benchmark-for-retrieving-b9ce4da55bba#:~:text=%2D%20STARK%20is%20a%20novel%20benchmark,textual%20descriptions%20with%20relational%20queries.) 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 </div>
 
