@@ -13,6 +13,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 </div>
 
+## NEWS
+- **[May 9th 2024]** We released [STaRK SKB Explorer](https://huggingface.co/spaces/snap-stanford/SKB-Explorer) on Hugging Face, an interactive interface for you to explore our knowledge base! 
+- **[May 7th 2024]** We present STaRK in the [2024 Stanford Annual Affiliates Meeting](https://forum.stanford.edu/events/2024-annual-affiliates-meeting) and [2024 Stanford Data Science Conference](https://datascience.stanford.edu/2024-stanford-data-science-conference).
+- **[21st Apr 2024]** We release the STaRK benchmark.
+
 ## What is STaRK?
 STaRK is a large-scale semi-structure retrieval benchmark on Textual and Relational Knowledge Bases. Given a user query, the task is to extract nodes from the knowledge base that are relevant to the query. 
 

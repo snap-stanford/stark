@@ -37,7 +37,7 @@ class MagSemiStruct(SemiStructureKB):
     mag_mapping_url = 'https://zenodo.org/records/2628216/files'
     processed_url = 'https://drive.google.com/uc?id=1zMf0xPNkITct5bPEXeWhI3V13W4UUSxA'
     
-    def __init__(self, root, download_processed=True):
+    def __init__(self, root, download_processed=True, **kwargs):
         '''
         Args:
             root (str): root directory to store the dataset folder
@@ -82,7 +82,7 @@ class MagSemiStruct(SemiStructureKB):
             processed_data = self._process_raw()
         processed_data.update({'node_type_dict': self.node_type_dict, 
                                'edge_type_dict': self.edge_type_dict})
-        super(MagSemiStruct, self).__init__(**processed_data)
+        super(MagSemiStruct, self).__init__(**processed_data, **kwargs)
 
     def load_edge(self, edge_type):
         edge_dir = osp.join(self.graph_data_root, f"raw/relations/{edge_type}/edge.csv.gz")

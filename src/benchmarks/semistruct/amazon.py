@@ -59,8 +59,8 @@ class AmazonSemiStruct(SemiStructureKB):
                  categories: list, 
                  meta_link_types=['brand'],
                  max_entries=25,
-                 indirected=True,
-                 download_processed=True):
+                 download_processed=True,
+                 **kwargs):
         '''
             Args: 
                 root (str): root directory to store the data
@@ -101,7 +101,7 @@ class AmazonSemiStruct(SemiStructureKB):
             if meta_link_types: 
                 # customize the graph by adding meta links
                 processed_data = self.post_process(processed_data, meta_link_types=meta_link_types, cache_path=cache_path)
-        super(AmazonSemiStruct, self).__init__(**processed_data, indirected=indirected)
+        super(AmazonSemiStruct, self).__init__(**processed_data, **kwargs)
     
     def __getitem__(self, idx):
         idx = int(idx)

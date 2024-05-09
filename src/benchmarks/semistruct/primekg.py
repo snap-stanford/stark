@@ -27,7 +27,7 @@ class PrimeKGSemiStruct(SemiStructureKB):
     raw_data_url = 'https://drive.google.com/uc?id=1d__3yP6YZYjKWR2F9fGg-y1rW7-HJPpr'
     processed_url = 'https://drive.google.com/uc?id=1VZbPxUzpQVqV0fzF3_NJVn4mPTgAN0b5'
 
-    def __init__(self, root, download_processed=True):
+    def __init__(self, root, download_processed=True, **kwargs):
         '''
         Args:
             root (str): root directory to store the dataset folder
@@ -55,7 +55,7 @@ class PrimeKGSemiStruct(SemiStructureKB):
             print(f'Loaded from {self.processed_data_dir}!')
         else:
             processed_data = self._process_raw()
-        super(PrimeKGSemiStruct, self).__init__(**processed_data)
+        super(PrimeKGSemiStruct, self).__init__(**processed_data, **kwargs)
 
         self.node_info = clean_dict(self.node_info)
         self.node_attr_dict = {}
