@@ -6,8 +6,9 @@ import json
 import torch
 import pandas as pd
 import numpy as np
+from collections import Counter
 from tqdm import tqdm
-import gdown
+from huggingface_hub import hf_hub_download
 import zipfile
 from ogb.utils.url import download_url
 from src.benchmarks.semistruct.knowledge_base import SemiStructureKB
@@ -15,6 +16,10 @@ from src.tools.process_text import clean_data, compact_text
 from src.tools.node import df_row_to_dict, Node, register_node
 from src.tools.io import save_files, load_files
 
+PROCESSED_DATASET = {
+    "repo": "snap-stanford/STaRK-Dataset",
+    "file": "amazon_processed.zip",
+}
 
 class AmazonSemiStruct(SemiStructureKB):
     
@@ -44,20 +49,23 @@ class AmazonSemiStruct(SemiStructureKB):
                   'Office_Products', 'Patio_Lawn_and_Garden', 'Pet_Supplies', 'Sports_and_Outdoors', 
                   'Tools_and_Home_Improvement', 'Toys_and_Games', 'Video_Games'])
     
+    sub_category = 'data/amazon/category_list.json'
+    SUB_CATEGORIES = set(json.load(open(sub_category, 'r')))
     link_columns = ['also_buy', 'also_view']
-    review_columns = ['reviewerID', 'summary', 'reviewText', 'vote', 'overall', 'verified', 'reviewTime']
+    review_columns = ['reviewerID', 'summary', 'style', 'reviewText', 'vote', 'overall', 'verified', 'reviewTime']
     qa_columns = ['questionType', 'answerType', 'question', 'answer', 'answerTime']
     meta_columns = ['asin', 'title', 'global_category', 'category', 'price', 'brand', 'feature',
                     'rank', 'details', 'description']
     candidate_types = ['product']
     node_attr_dict = {'product': ['title', 'dimensions', 'weight', 'description', 'features', 'reviews', 'Q&A'],
-                       'brand': ['brand_name']}
-    processed_url = 'https://drive.google.com/uc?id=1_NlQdMR9thVAZb5Jni9E-ukMeq2VWOvl'
+                       'brand': ['brand_name'],
+                       'category': ['category_name'],
+                       'color': ['color_name']}
 
     def __init__(self, 
                  root,
                  categories: list, 
-                 meta_link_types=['brand'],
+                 meta_link_types=['brand', 'category', 'color'],
                  max_entries=25,
                  download_processed=True,
                  **kwargs):
@@ -86,8 +94,11 @@ class AmazonSemiStruct(SemiStructureKB):
         
         if not osp.exists(osp.join(self.processed_data_dir, 'node_info.pkl')) and download_processed:
             print('Downloading processed data...')
-            processed_path = osp.join(self.root, 'processed.zip')
-            gdown.download(self.processed_url, processed_path, quiet=False)
+            processed_path = hf_hub_download(
+                PROCESSED_DATASET["repo"],
+                PROCESSED_DATASET["file"],
+                repo_type="model",
+            )
             with zipfile.ZipFile(processed_path, 'r') as zip_ref:
                 zip_ref.extractall(self.root)
             os.remove(processed_path)
@@ -97,6 +108,8 @@ class AmazonSemiStruct(SemiStructureKB):
             print(f'Load cached graph with meta link types {meta_link_types}')
             processed_data = load_files(cache_path)
         else:
+            print(f'Start processing raw data...')
+            print(f'{meta_link_types=}')
             processed_data = self._process_raw(categories)
             if meta_link_types: 
                 # customize the graph by adding meta links
@@ -106,10 +119,6 @@ class AmazonSemiStruct(SemiStructureKB):
     def __getitem__(self, idx):
         idx = int(idx)
         node_info = self.node_info[idx]
-        try:
-            dimensions, weight = node.details.dictionary.product_dimensions.split(' ; ')
-            node_info['dimensions'], node_info['weight'] = dimensions, weight
-        except: pass
         node = Node()
         register_node(node, node_info)
         return node
@@ -160,6 +169,10 @@ class AmazonSemiStruct(SemiStructureKB):
         
         if self.node_type_dict[int(self.node_types[idx])] == 'brand':
             return f'brand name: {self[idx].brand_name}'
+        if self.node_type_dict[int(self.node_types[idx])] == 'category':
+            return f'category name: {self[idx].category_name}'
+        if self.node_type_dict[int(self.node_types[idx])] == 'color':
+            return f'color name: {self[idx].color_name}'
         
         node = self[idx]
         doc = f'- product: {node.title}\n'
@@ -261,29 +274,50 @@ class AmazonSemiStruct(SemiStructureKB):
         print(f'Check data downloading...')
         for category in review_categories:
             review_header = 'https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_v2'
-            download_url(f'{review_header}/categoryFiles/{category}.json.gz', self.raw_data_dir)
-            download_url(f'{review_header}/metaFiles2/meta_{category}.json.gz', self.raw_data_dir)
+            if not os.path.exists(osp.join(self.raw_data_dir, f'{category}.json.gz')):
+                print(f'Downloading {category} data...')
+                download_url(f'{review_header}/categoryFiles/{category}.json.gz', self.raw_data_dir)
+                download_url(f'{review_header}/metaFiles2/meta_{category}.json.gz', self.raw_data_dir)
         for category in qa_categories:
             qa_header = 'https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon/qa'
-            download_url(f'{qa_header}/qa_{category}.json.gz', self.raw_data_dir)
+            if not os.path.exists(osp.join(self.raw_data_dir, f'qa_{category}.json.gz')):
+                print(f'Downloading {category} QA data...')
+                download_url(f'{qa_header}/qa_{category}.json.gz', self.raw_data_dir)
             
         if not osp.exists(osp.join(self.processed_data_dir, 'node_info.pkl')):
+            ckt_path = 'data/amazon/intermediate'
             print('Loading data... It might take a while')
             # read amazon QA data
-            df_qa = pd.concat([read_qa(osp.join(self.raw_data_dir, f'qa_{category}.json.gz'))
-                               for category in qa_categories])[['asin'] + self.qa_columns]
-            
+            df_qa_path = os.path.join(ckt_path, 'df_qa.pkl')
+            if os.path.exists(df_qa_path):
+                df_qa = pd.read_pickle(df_qa_path)
+            else:
+                df_qa = pd.concat([read_qa(osp.join(self.raw_data_dir, f'qa_{category}.json.gz'))
+                                for category in qa_categories])[['asin'] + self.qa_columns]
+                df_qa.to_pickle(df_qa_path)
+            print('df_qa loaded')
             # read amazon review data
-            df_review = pd.concat([read_review(osp.join(self.raw_data_dir, f'{category}.json.gz')) 
+            df_review_path = os.path.join(ckt_path, 'df_review.pkl')
+            if os.path.exists(df_review_path):
+                df_review = pd.read_pickle(df_review_path)
+            else:
+                df_review = pd.concat([read_review(osp.join(self.raw_data_dir, f'{category}.json.gz')) 
                                    for category in review_categories])[['asin'] + self.review_columns]
+                df_review.to_pickle(df_review_path)
+            print('df_review loaded')
             # read amazon meta data from amazon review & amazon kdd
-            meta_df_lst = []
-            for category in review_categories:
-                cat_review = read_review(osp.join(self.raw_data_dir, f'meta_{category}.json.gz'))
-                cat_review.insert(0, 'global_category', category.replace('_', ' '))
-                meta_df_lst.append(cat_review)
-            df_ucsd_meta = pd.concat(meta_df_lst)
-            
+            df_ucsd_meta_path = os.path.join(ckt_path, 'df_ucsd_meta.pkl')
+            if os.path.exists(df_ucsd_meta_path):
+                df_ucsd_meta = pd.read_pickle(df_ucsd_meta_path)
+            else:
+                meta_df_lst = []
+                for category in review_categories:
+                    cat_review = read_review(osp.join(self.raw_data_dir, f'meta_{category}.json.gz'))
+                    cat_review.insert(0, 'global_category', category.replace('_', ' '))
+                    meta_df_lst.append(cat_review)
+                df_ucsd_meta = pd.concat(meta_df_lst)
+                df_ucsd_meta.to_pickle(df_ucsd_meta_path)
+            print('df_ucsd_meta loaded')
             print('Preprocessing data...')
             df_ucsd_meta = df_ucsd_meta.drop_duplicates(subset='asin', keep='first')
             df_meta = df_ucsd_meta[self.meta_columns + self.link_columns]
@@ -335,20 +369,34 @@ class AmazonSemiStruct(SemiStructureKB):
         
         n_e_types, n_n_types = len(edge_type_dict), len(node_type_dict)
         for i, link_type in enumerate(meta_link_types):
-            values = np.array([self._process_brand(node_info_i[link_type]) for node_info_i in node_info.values() if link_type in node_info_i.keys()])
-            indices = np.array([idx for idx, node_info_i in enumerate(node_info.values()) if link_type in node_info_i.keys()])
+            if link_type == 'brand':
+                values = np.array([node_info_i[link_type] for node_info_i in node_info.values() if link_type in node_info_i.keys()])
+                indices = np.array([idx for idx, node_info_i in enumerate(node_info.values()) if link_type in node_info_i.keys()])
+            elif link_type in ['category', 'color']:
+                value_list = []
+                indice_list = []
+                for idx, node_info_i in enumerate(node_info.values()):
+                    if link_type in node_info_i.keys():
+                        value_list.extend(node_info_i[link_type])
+                        indice_list.extend([idx for _ in range(len(node_info_i[link_type]))])
+                values = np.array(value_list)
+                indices = np.array(indice_list)
+            else:
+                raise Exception(f'Invalid meta link type {link_type}')
             
             cur_n_nodes = len(node_info)
             node_type_dict[n_n_types + i] = link_type
             edge_type_dict[n_e_types + i] = "has_" + link_type
             unique = np.unique(values)
-            for j, unique_j in enumerate(unique):
+            for j, unique_j in tqdm(enumerate(unique)):
                 node_info[cur_n_nodes + j] = {link_type + '_name': unique_j}
                 ids = indices[np.array(values == unique_j)]
                 edge_index[0].extend(list(ids))
                 edge_index[1].extend([cur_n_nodes + j for _ in range(len(ids))])
                 edge_types.extend([i + n_e_types for _ in range(len(ids))])
             node_types.extend([n_n_types + i for _ in range(len(unique))])
+            print(f'finished adding {link_type}')
+            
         edge_index = torch.LongTensor(edge_index)
         edge_types = torch.LongTensor(edge_types)
         node_types = torch.LongTensor(node_types)
@@ -382,6 +430,72 @@ class AmazonSemiStruct(SemiStructureKB):
             node_info[idx]['review'] = []
             node_info[idx]['qa'] = []
         
+        ###################### Assign color ########################
+        def assign_colors(df_review, lower_limit=20):
+            # asign to color
+            df_review = df_review[['asin', 'style']]
+            df_review = df_review.dropna(subset=['style'])
+            raw_color_dict = {}
+            for idx, row in tqdm(df_review.iterrows()):
+                asin, style = row['asin'], row['style']
+                for key in style.keys():
+                    if 'color' in key.lower():
+                        try:
+                            raw_color_dict[asin] 
+                        except:
+                            raw_color_dict[asin] = []
+                        raw_color_dict[asin].append(
+                            style[key].strip().lower() if isinstance(style[key], str) else style[key][0].strip())
+            
+            all_color_values = []
+            for asin in raw_color_dict.keys():
+                raw_color_dict[asin] = list(set(raw_color_dict[asin]))
+                all_color_values.extend(raw_color_dict[asin])
+            
+            print('number of all colors', len(all_color_values))
+            color_counter = Counter(all_color_values)
+            print('number of unique colors', len(color_counter))
+            color_counter = {k: v for k, v in sorted(color_counter.items(), key=lambda item: item[1], reverse=True)}
+            selected_colors = []
+            for color, number in color_counter.items():
+                if number > lower_limit and len(color) > 2 and len(color.split(' ')) < 5 and color.isnumeric() is False:
+                    selected_colors.append(color)
+            print('number of selected colors', len(selected_colors))
+            
+            filtered_color_dict = {}
+            total_color_connections = 0
+            for asin in raw_color_dict.keys():
+                filtered_color_dict[asin] = []
+                for value in raw_color_dict[asin]:
+                    if value in selected_colors:
+                        filtered_color_dict[asin].append(value)
+                total_color_connections += len(filtered_color_dict[asin])
+            print('number of linked products', len(filtered_color_dict))
+            print('number of total connections', total_color_connections)
+            return filtered_color_dict
+    
+        filtered_color_dict_path = os.path.join('data/amazon/intermediate', 
+                                                'filtered_color_dict.pkl')
+        if os.path.exists(filtered_color_dict_path):
+            with open(filtered_color_dict_path, 'rb') as f:
+                filtered_color_dict = pickle.load(f)
+        else:
+            filtered_color_dict = assign_colors(df_review)
+            with open(filtered_color_dict_path, 'wb') as f:
+                pickle.dump(filtered_color_dict, f)
+        
+        for i in tqdm(range(len(df_meta))):
+            df_meta_i = df_meta.iloc[i]
+            asin = df_meta_i['asin']
+            idx = self.asin2id[asin]
+            try:
+                color = filtered_color_dict[asin]
+                if len(color):
+                    node_info[idx]['color'] = color
+            except: pass
+        print('loaded color')
+        ####################################################################
+
         for i in tqdm(range(len(df_meta))):
             df_meta_i = df_meta.iloc[i]
             asin = df_meta_i['asin']
@@ -391,9 +505,17 @@ class AmazonSemiStruct(SemiStructureKB):
                     brand = self._process_brand(clean_data(df_meta_i[column]))
                     if len(brand) > 1:
                         node_info[idx]['brand'] = brand
+                elif column == 'category':
+                    category_list = []
+                    for category in df_meta_i[column]:
+                        category = category.lower()
+                        if category in self.SUB_CATEGORIES:
+                            category_list.append(category)
+                    if len(category_list) > 0:
+                        node_info[idx]['category'] = category_list
                 else:
                     node_info[idx][column] = clean_data(df_meta_i[column])
-                        
+        
         for name, df in zip(['review', 'qa'], [df_review, df_qa]):
             for i in tqdm(range(len(df))):
                 df_i = df.iloc[i]
@@ -402,6 +524,7 @@ class AmazonSemiStruct(SemiStructureKB):
                 node_info[idx][name].append(
                     df_row_to_dict(df_i, colunm_names=self.review_columns \
                                    if name == 'review' else self.qa_columns))
+        import pdb; pdb.set_trace()
         return node_info
 
     def create_raw_product_graph(self, df, columns):
