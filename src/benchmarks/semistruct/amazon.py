@@ -45,7 +45,7 @@ class AmazonSemiStruct(SemiStructureKB):
                   'Tools_and_Home_Improvement', 'Toys_and_Games', 'Video_Games'])
     
     link_columns = ['also_buy', 'also_view']
-    review_columns = ['reviewerID', 'summary', 'reviewText', 'vote', 'overall', 'verified', 'reviewTime']
+    review_columns = ['reviewerID', 'summary', 'reviewText', 'style', 'vote', 'overall', 'verified', 'reviewTime']
     qa_columns = ['questionType', 'answerType', 'question', 'answer', 'answerTime']
     meta_columns = ['asin', 'title', 'global_category', 'category', 'price', 'brand', 'feature',
                     'rank', 'details', 'description']
@@ -393,14 +393,16 @@ class AmazonSemiStruct(SemiStructureKB):
                         node_info[idx]['brand'] = brand
                 else:
                     node_info[idx][column] = clean_data(df_meta_i[column])
-                        
+        
+        review_columns = self.review_columns
+        review_columns.remove('style')
         for name, df in zip(['review', 'qa'], [df_review, df_qa]):
             for i in tqdm(range(len(df))):
                 df_i = df.iloc[i]
                 asin = df_i['asin']
                 idx = self.asin2id[asin]
                 node_info[idx][name].append(
-                    df_row_to_dict(df_i, colunm_names=self.review_columns \
+                    df_row_to_dict(df_i, colunm_names=review_columns \
                                    if name == 'review' else self.qa_columns))
         return node_info
 
