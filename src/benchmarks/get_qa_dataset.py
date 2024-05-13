@@ -8,11 +8,11 @@ def get_qa_dataset(name, root='data/'):
         split_dir = osp.join(qa_root, 'split')
         stark_qa_dir = osp.join(qa_root, 'stark_qa')
         dataset = AmazonSTaRKDataset(stark_qa_dir, split_dir)
-    if name == 'primekg':
+    elif name == 'primekg':
         split_dir = osp.join(qa_root, 'split')
         stark_qa_dir = osp.join(qa_root, 'stark_qa')
         dataset = PrimeKGSTaRKDataset(stark_qa_dir, split_dir)
-    if name == 'mag':
+    elif name == 'mag':
         split_dir = osp.join(qa_root, 'split')
         stark_qa_dir = osp.join(qa_root, 'stark_qa')
         dataset = MAGSTaRKDataset(stark_qa_dir, split_dir)

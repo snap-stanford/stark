@@ -8,17 +8,16 @@ def get_semistructured_data(name, root='data/', download_processed=True, **kwarg
         categories = ['Sports_and_Outdoors']
         kb = AmazonSemiStruct(root=data_root,
                               categories=categories,
-                              meta_link_types=['brand'],
                               download_processed=download_processed,
                               **kwargs
                               )
     if name == 'primekg':
         kb = PrimeKGSemiStruct(root=data_root, 
-                               download_processed=download_processed,
-                               **kwargs)
+                                download_processed=download_processed,
+                                **kwargs)
     
     if name == 'mag':
         kb = MagSemiStruct(root=data_root, 
-                           download_processed=download_processed, 
-                           **kwargs)
+                            download_processed=download_processed,
+                            **kwargs)
     return kb

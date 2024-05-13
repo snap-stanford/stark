@@ -3,7 +3,7 @@ import os.path as osp
 import pickle
 import torch
 import pandas as pd
-import sys
+from huggingface_hub import hf_hub_download
 from src.benchmarks.semistruct.knowledge_base import SemiStructureKB
 from src.tools.process_text import compact_text, clean_dict
 from src.tools.node import Node, register_node
@@ -13,6 +13,10 @@ import gdown
 import zipfile
 import json
 
+PROCESSED_DATASET = {
+    "repo": "snap-stanford/STaRK-Dataset",
+    "file": "primekg_processed.zip",
+}
 
 class PrimeKGSemiStruct(SemiStructureKB):
     
@@ -25,7 +29,6 @@ class PrimeKGSemiStruct(SemiStructureKB):
     META_DATA = ['id', 'type', 'name', 'source', 'details']
     candidate_types = NODE_TYPES 
     raw_data_url = 'https://drive.google.com/uc?id=1d__3yP6YZYjKWR2F9fGg-y1rW7-HJPpr'
-    processed_url = 'https://drive.google.com/uc?id=1VZbPxUzpQVqV0fzF3_NJVn4mPTgAN0b5'
 
     def __init__(self, root, download_processed=True, **kwargs):
         '''
@@ -43,8 +46,11 @@ class PrimeKGSemiStruct(SemiStructureKB):
 
         if not osp.exists(osp.join(self.processed_data_dir, 'node_info.pkl')) and download_processed:
             print('Downloading processed data...')
-            processed_path = osp.join(self.root, 'processed.zip')
-            gdown.download(self.processed_url, processed_path, quiet=False)
+            processed_path = hf_hub_download(
+                PROCESSED_DATASET["repo"],
+                PROCESSED_DATASET["file"],
+                repo_type="model",
+            )
             with zipfile.ZipFile(processed_path, 'r') as zip_ref:
                 zip_ref.extractall(self.root)
             os.remove(processed_path)

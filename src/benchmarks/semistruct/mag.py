@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from langdetect import detect
 import gdown
+from huggingface_hub import hf_hub_download
 import zipfile
 from ogb.nodeproppred import NodePropPredDataset
 from ogb.utils.url import download_url, extract_zip
@@ -15,6 +16,10 @@ from src.tools.process_text import clean_data, compact_text, decode_escapes
 from src.benchmarks.semistruct.knowledge_base import SemiStructureKB
 from src.tools.io import save_files, load_files
 
+PROCESSED_DATASET = {
+    "repo": "snap-stanford/STaRK-Dataset",
+    "file": "mag_processed.zip",
+}
 
 class MagSemiStruct(SemiStructureKB):
     
@@ -35,7 +40,6 @@ class MagSemiStruct(SemiStructureKB):
     ogbn_papers100M_cache_url = 'https://drive.google.com/uc?id=1BWHBIukoVsCsJ2kCRPKbXXrh_rHdluIp'
     ogbn_papers100M_url = 'https://snap.stanford.edu/ogb/data/misc/ogbn_papers100M/paperinfo.zip'
     mag_mapping_url = 'https://zenodo.org/records/2628216/files'
-    processed_url = 'https://drive.google.com/uc?id=1zMf0xPNkITct5bPEXeWhI3V13W4UUSxA'
     
     def __init__(self, root, download_processed=True, **kwargs):
         '''
@@ -67,8 +71,11 @@ class MagSemiStruct(SemiStructureKB):
 
         if not osp.exists(osp.join(self.processed_data_dir, 'node_info.pkl')) and download_processed:
             print('Downloading processed data...')
-            processed_path = osp.join(self.root, 'processed.zip')
-            gdown.download(self.processed_url, processed_path, quiet=False)
+            processed_path = hf_hub_download(
+                PROCESSED_DATASET["repo"],
+                PROCESSED_DATASET["file"],
+                repo_type="model",
+            )
             with zipfile.ZipFile(processed_path, 'r') as zip_ref:
                 zip_ref.extractall(self.root)
             os.remove(processed_path)

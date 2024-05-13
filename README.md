@@ -15,10 +15,11 @@
 </div>
 
 ## NEWS
+- **[May 11th 2024]** We have upgraded our Amazon knowledge base and uploaded datasets to huggingface. Now you can download all the datasets from our [huggingface repo](https://huggingface.co/snap-stanford/STaRK-Dataset)!
 - **[May 9th 2024]** We released [STaRK SKB Explorer](https://huggingface.co/spaces/snap-stanford/SKB-Explorer) on Hugging Face, an interactive interface for you to explore our knowledge bases! A demo video will be out soon.
 - **[May 7th 2024]** We present STaRK in the [2024 Stanford Annual Affiliates Meeting](https://forum.stanford.edu/events/2024-annual-affiliates-meeting) and [2024 Stanford Data Science Conference](https://datascience.stanford.edu/2024-stanford-data-science-conference).
 - **[May 5th 2024]** STaRK was reported on [Medium](https://medium.com/@multiplatform.ai/researchers-from-stanford-and-amazon-unveil-stark-a-comprehensive-benchmark-for-retrieving-b9ce4da55bba#:~:text=%2D%20STARK%20is%20a%20novel%20benchmark,textual%20descriptions%20with%20relational%20queries.) and [Marketpost](https://www.marktechpost.com/2024/05/01/researchers-from-stanford-and-amazon-developed-stark-a-large-scale-semi-structure-retrieval-ai-benchmark-on-textual-and-relational-knowledge-bases/). Thanks for writing about our work!
-- **[21st Apr 2024]** We release the STaRK benchmark.
+- **[Apr 21st 2024]** We release the STaRK benchmark.
 
 ## What is STaRK?
 STaRK is a large-scale semi-structure retrieval benchmark on Textual and Relational Knowledge Bases. Given a user query, the task is to extract nodes from the knowledge base that are relevant to the query. 
