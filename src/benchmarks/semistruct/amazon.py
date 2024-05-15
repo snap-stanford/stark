@@ -524,7 +524,7 @@ class AmazonSemiStruct(SemiStructureKB):
                 asin = df_i['asin']
                 idx = self.asin2id[asin]
                 node_info[idx][name].append(
-                    df_row_to_dict(df_i, colunm_names=review_columns \
+                    df_row_to_dict(df_i, colunm_names=self.review_columns \
                                    if name == 'review' else self.qa_columns))
         import pdb; pdb.set_trace()
         return node_info
