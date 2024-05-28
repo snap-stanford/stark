@@ -17,7 +17,8 @@ def parse_args():
     parser.add_argument(
         "--model", default="VSS", choices=["VSS", "MultiVSS", "LLMReranker"]
     )
-    parser.add_argument("--split", default="test", choices=["train", "val", "test", "human_generated_eval"])
+    parser.add_argument("--split", default="test", 
+                        choices=["train", "val", "test", "human_generated_eval"])
 
     # can eval on a subset only
     parser.add_argument("--test_ratio", type=float, default=1.0)
@@ -33,7 +34,7 @@ def parse_args():
     # for llm reranker
     parser.add_argument("--llm_model", type=str, default="gpt-4-1106-preview",
                         help='the LLM to rerank candidates.')
-    parser.add_argument("--llm_topk", type=int, default=20)
+    parser.add_argument("--llm_topk", type=int, default=10)
     parser.add_argument("--max_retry", type=int, default=3)
 
     # path
@@ -42,6 +43,7 @@ def parse_args():
 
     # save prediction
     parser.add_argument("--save_pred", action="store_true")
+    parser.add_argument("--save_topk", type=int, default=500, help="topk predicted indices to save")
     return parser.parse_args()
 
 
@@ -52,7 +54,8 @@ if __name__ == "__main__":
     )
     args = merge_args(args, default_args)
 
-    args.query_emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, "query")
+    query_emb_surfix = f'_{args.split}' if args.split == 'human_generated_eval' else ''
+    args.query_emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, f"query{query_emb_surfix}")
     args.node_emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, "doc")
     args.chunk_emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, "chunk")
     surfix = args.llm_model if args.model == 'LLMReranker' else args.emb_model
@@ -114,7 +117,7 @@ if __name__ == "__main__":
         result["idx"], result["query_id"] = idx, query_id
         result["pred_rank"] = torch.LongTensor(list(pred_dict.keys()))[
             torch.argsort(torch.tensor(list(pred_dict.values())), descending=True)[
-                :1000
+                :args.save_topk
             ]
         ].tolist()
 

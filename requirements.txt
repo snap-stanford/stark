@@ -61,7 +61,6 @@ packaging==23.2
 pandas==2.0.3
 Pygments==2.16.1
 PyTDC==0.4.1
-python==3.8.17
 pyvis==0.3.2
 ray==2.7.1
 regex==2023.10.3

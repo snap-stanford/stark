@@ -19,7 +19,7 @@
 ## NEWS
 - **[May 11th 2024]** We have upgraded our Amazon knowledge base and uploaded datasets to huggingface. Now you can download the SKB data from our [huggingface repo](https://huggingface.co/snap-stanford/STaRK-Dataset)!
 - **[May 9th 2024]** We released [STaRK SKB Explorer](https://huggingface.co/spaces/snap-stanford/SKB-Explorer) on Hugging Face, an interactive interface for you to explore our knowledge bases! A demo video will be out soon.
-- **[May 7th 2024]** We present STaRK in the [2024 Stanford Annual Affiliates Meeting](https://forum.stanford.edu/events/2024-annual-affiliates-meeting) and [2024 Stanford Data Science Conference](https://datascience.stanford.edu/2024-stanford-data-science-conference).
+- **[May 7th 2024]** We present STaRK in the [2024 Stanford Annual Affiliates Meeting](https://forum.stanford.edu/events/2024-annual-affiliates-meeting/day-3-ai-health-and-data-science-applications-workshop) and [2024 Stanford Data Science Conference](https://datascience.stanford.edu/2024-stanford-data-science-conference).
 - **[May 5th 2024]** STaRK was reported on [Medium](https://medium.com/@multiplatform.ai/researchers-from-stanford-and-amazon-unveil-stark-a-comprehensive-benchmark-for-retrieving-b9ce4da55bba#:~:text=%2D%20STARK%20is%20a%20novel%20benchmark,textual%20descriptions%20with%20relational%20queries.) and [Marketpost](https://www.marktechpost.com/2024/05/01/researchers-from-stanford-and-amazon-developed-stark-a-large-scale-semi-structure-retrieval-ai-benchmark-on-textual-and-relational-knowledge-bases/) and [智源社区 BAAI](https://hub.baai.ac.cn/paper/6841fd6f-1eca-41c4-a432-5f2d845ac167). Thanks for writing about our work!
 - **[Apr 21st 2024]** We release the STaRK benchmark.
 
@@ -103,11 +103,11 @@ There are two ways to load the knowledge base data:
 
 - Run the python script for evaluation. E.g.,
     ```bash
-    python eval.py --dataset amazon --model VSS --emb_dir emb/ --output_dir output/ --emb_model text-embedding-ada-002 --save_pred
+    python eval.py --dataset amazon --model VSS --emb_dir emb/ --output_dir output/ --emb_model text-embedding-ada-002 --split test --save_pred 
     ```
 
     ```bash
-    python eval.py --dataset amazon --model LLMReranker --emb_dir emb/ --output_dir output/  --emb_model text-embedding-ada-002 --llm_model gpt-4-1106-preview --save_pred
+    python eval.py --dataset amazon --model LLMReranker --emb_dir emb/ --output_dir output/  --emb_model text-embedding-ada-002 --split test --llm_model gpt-4-1106-preview --save_pred
     ```
 
     - `dataset`: the dataset to evaluate on, one of  `amazon`, `mag` or `primekg`.
@@ -115,12 +115,13 @@ There are two ways to load the knowledge base data:
         - Please specify the name of embedding model with argument `--emb_model`.
         - If you are using `LLMReranker`, please specify API keys at `config/openai_api_key.txt` or `config/claude_api_key.txt` and the LLM name with argument `--llm_model`.
     - `emb_dir`: the directory to store embeddings.
+    - `split`: the split to evaluate on, one of `train`, `val`, `test`, and `human_generated_eval` (to be evaluated on the human generated query dataset).
     - `output_dir`: the directory to store evaluation outputs.
 
 
 ## Reference 
 
-Please cite our paper if you use our benchmark or code in your work:
+Please consider citing our paper if you use our benchmark or code in your work:
 ```
 @article{wu24stark,
     title        = {STaRK: Benchmarking LLM Retrieval on Textual and Relational Knowledge Bases},

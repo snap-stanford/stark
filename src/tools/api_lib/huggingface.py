@@ -1,26 +1,8 @@
 import time
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from transformers import StoppingCriteria, StoppingCriteriaList
 
 loaded_hf_models = {}
-
-
-class StopAtSpecificTokenCriteria(StoppingCriteria):
-    def __init__(self, stop_sequence):
-        super().__init__()
-        self.stop_sequence = stop_sequence
-
-    def __call__(self, input_ids, scores, **kwargs):
-        # Create a tensor from the stop_sequence
-        stop_sequence_tensor = torch.tensor(self.stop_sequence, 
-                                            device=input_ids.device, 
-                                            dtype=input_ids.dtype
-                                            )
-
-        # Check if the current sequence ends with the stop_sequence
-        current_sequence = input_ids[:, -len(self.stop_sequence) :]
-        return bool(torch.all(current_sequence == stop_sequence_tensor).item())
 
 
 def complete_text_hf(message, 

@@ -35,13 +35,16 @@ def parse_args():
                         help='add relation to the text')
     parser.add_argument('--compact', action='store_true', default=False, 
                         help='make the text compact when input to the model')
+    parser.add_argument("--human_generated_eval", action="store_true",
+                        help="if mode is `query`, then generating query embeddings on human generated evaluation split")
     return parser.parse_args()
     
     
 
 if __name__ == '__main__':
     args = parse_args()
-    emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, args.mode)
+    mode_surfix = '_human_generated_eval' if args.human_generated_eval and args.mode == 'query' else ''
+    emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, f'{args.mode}{mode_surfix}')
     os.makedirs(emb_dir, exist_ok=True)
 
     if args.mode == 'doc':
@@ -49,7 +52,7 @@ if __name__ == '__main__':
         lst = kb.candidate_ids
         emb_path = osp.join(emb_dir, f'candidate_emb_dict.pt')
     if args.mode == 'query':
-        qa_dataset = get_qa_dataset(args.dataset)
+        qa_dataset = get_qa_dataset(args.dataset, human_generated_eval=args.human_generated_eval)
         lst = [qa_dataset[i][1] for i in range(len(qa_dataset))]
         emb_path = osp.join(emb_dir, f'query_emb_dict.pt')
     random.shuffle(lst)
@@ -74,7 +77,7 @@ if __name__ == '__main__':
         indices.append(idx)
         
     print(f'Generating embeddings for {len(texts)} texts...')
-    embs = get_openai_embeddings(texts, model=args.emb_model).view(len(texts), -1).cpu()
+    embs = get_openai_embeddings(texts, model=args.emb_model, n_max_nodes=10).view(len(texts), -1).cpu()
     print('Embedding size:', embs.size())
     
     for idx, emb in zip(indices, embs):
