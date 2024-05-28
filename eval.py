@@ -17,7 +17,7 @@ def parse_args():
     parser.add_argument(
         "--model", default="VSS", choices=["VSS", "MultiVSS", "LLMReranker"]
     )
-    parser.add_argument("--split", default="test")
+    parser.add_argument("--split", default="test", choices=["train", "val", "test", "human_generated_eval"])
 
     # can eval on a subset only
     parser.add_argument("--test_ratio", type=float, default=1.0)
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     )
 
     kb = get_semistructured_data(args.dataset)
-    qa_dataset = get_qa_dataset(args.dataset)
+    qa_dataset = get_qa_dataset(args.dataset, human_generated_eval=args.split == 'human_generated_eval')
     model = get_model(args, kb)
 
     split_idx = qa_dataset.get_idx_split(test_ratio=args.test_ratio)

@@ -5,10 +5,15 @@ import pandas as pd
 
 
 class STaRKDataset:
-    def __init__(self, query_dir, split_dir):
+    def __init__(self, query_dir, split_dir, human_generated_eval=False):
         self.query_dir = query_dir
         self.split_dir = split_dir
-        self.qa_csv_path = osp.join(query_dir, 'stark_qa.csv')
+        self.human_generated_eval = human_generated_eval
+        if human_generated_eval:
+            self.qa_csv_path = osp.join(query_dir, 'stark_qa_human_generated_eval.csv')
+        else:
+            self.qa_csv_path = osp.join(query_dir, 'stark_qa.csv')
+        print('Loading QA dataset from', self.qa_csv_path)
         self.data = pd.read_csv(self.qa_csv_path)
 
         self.indices = list(self.data['id'])
@@ -31,6 +36,9 @@ class STaRKDataset:
         '''
         Return the indices of train/val/test split in a dictionary.
         '''
+        if self.human_generated_eval:
+            return {'human_generated_eval': torch.LongTensor(self.indices)}
+        
         split_idx = {}
         for split in ['train', 'val', 'test']:
             # `{split}.index`stores query ids, not the index in the dataset
