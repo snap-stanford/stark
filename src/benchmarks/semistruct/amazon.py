@@ -92,7 +92,7 @@ class AmazonSemiStruct(SemiStructureKB):
         cache_path = None if meta_link_types is None else \
                      osp.join(self.processed_data_dir, 'cache', '-'.join(meta_link_types))
         
-        if not osp.exists(osp.join(self.processed_data_dir, 'node_info.pkl')) and download_processed:
+        if not osp.exists(osp.join(cache_path, 'node_info.pkl')) and download_processed:
             print('Downloading processed data...')
             processed_path = hf_hub_download(
                 PROCESSED_DATASET["repo"],
