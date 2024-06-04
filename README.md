@@ -28,7 +28,7 @@ STaRK is a large-scale semi-structure retrieval benchmark on Textual and Relatio
 
 
 <figure class="center-figure">
-    <img src="media/overview.png" width="100%">
+    <img src="media/overview.jpg" width="90%">
 </figure>
 
 
@@ -40,11 +40,11 @@ requirements in queries.
 
 - **Large-scale and Diverse KBs**: We provide three large-scale knowledge bases across three areas, which are constructed from public sources.
 
-    <figure class="center-figure"> <img src="media/kb.jpg" width="100%"></figure> 
+    <figure class="center-figure"> <img src="media/kb.jpg" width="90%"></figure> 
 
 - **Natural-sounding and Practical Queries**: The queries in our benchmark are crafted to incorporate rich relational information and complex textual properties, and closely mirror questions in real-life scenarios, e.g., with flexible query formats and possibly with extra contexts.
 
-    <figure class="center-figure"> <img src="media/questions.jpg" width="100%"></figure> 
+    <figure class="center-figure"> <img src="media/questions.jpg" width="95%"></figure> 
 
 
 # Access benchmark data

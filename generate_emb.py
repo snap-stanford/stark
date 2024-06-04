@@ -37,6 +37,9 @@ def parse_args():
                         help='make the text compact when input to the model')
     parser.add_argument("--human_generated_eval", action="store_true",
                         help="if mode is `query`, then generating query embeddings on human generated evaluation split")
+
+    parser.add_argument("--batch_size", default=100, type=int)
+    parser.add_argument("--n_max_nodes", default=10, type=int)
     return parser.parse_args()
     
     
@@ -44,7 +47,10 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     mode_surfix = '_human_generated_eval' if args.human_generated_eval and args.mode == 'query' else ''
+    mode_surfix += '_no_rel' if not args.add_rel else ''
+    mode_surfix += '_no_compact' if not args.compact else ''
     emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, f'{args.mode}{mode_surfix}')
+    print(f'Embedding directory: {emb_dir}')
     os.makedirs(emb_dir, exist_ok=True)
 
     if args.mode == 'doc':
@@ -76,11 +82,21 @@ if __name__ == '__main__':
         texts.append(text)
         indices.append(idx)
         
-    print(f'Generating embeddings for {len(texts)} texts...')
-    embs = get_openai_embeddings(texts, model=args.emb_model, n_max_nodes=10).view(len(texts), -1).cpu()
-    print('Embedding size:', embs.size())
     
-    for idx, emb in zip(indices, embs):
-        emb_dict[idx] = emb
+    print(f'Generating embeddings for {len(texts)} texts...')
+    # try:
+    for i in tqdm(range(0, len(texts), args.batch_size)):
+        batch_texts = texts[i:i+args.batch_size]
+        batch_embs = get_openai_embeddings(
+            batch_texts, 
+            model=args.emb_model, 
+            n_max_nodes=args.n_max_nodes
+            ).view(len(batch_texts), -1).cpu()
+        batch_indices = indices[i:i+args.batch_size]
+        for idx, emb in zip(batch_indices, batch_embs):
+            emb_dict[idx] = emb
+    # except Exception as e:
+        # print(f'Error: {e}')
+        
     torch.save(emb_dict, emb_path)
-    print(f'Saved embeddings to {emb_path}!')
+    print(f'Saved {len(emb_dict)} embeddings to {emb_path}!')
