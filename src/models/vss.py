@@ -1,25 +1,25 @@
 import os.path as osp
-import torch    
+import torch
 from typing import Any
 from src.models.model import ModelForSemiStructQA
 from tqdm import tqdm
 
-
 class VSS(ModelForSemiStructQA):
     
     def __init__(self, 
-                 kb,
-                 query_emb_dir, 
-                 candidates_emb_dir,
-                 emb_model='text-embedding-ada-002'):
-        '''
+                 kb, 
+                 query_emb_dir: str, 
+                 candidates_emb_dir: str, 
+                 emb_model: str = 'text-embedding-ada-002'):
+        """
         Vector Similarity Search
+
         Args:
-            kb (src.benchmarks.semistruct.SemiStruct): kb
-            query_emb_dir (str): directory to query embeddings
-            candidates_emb_dir (str): directory to candidate embeddings
-        '''
-        
+            kb (SemiStruct): Knowledge base.
+            query_emb_dir (str): Directory to query embeddings.
+            candidates_emb_dir (str): Directory to candidate embeddings.
+            emb_model (str): Embedding model name.
+        """
         super(VSS, self).__init__(kb)
         self.emb_model = emb_model
         self.query_emb_dir = query_emb_dir
@@ -42,16 +42,20 @@ class VSS(ModelForSemiStructQA):
         self.candidate_embs = torch.cat(candidate_embs, dim=0)
 
     def forward(self, 
-                query: str,
-                query_id: int,
-                **kwargs: Any):
-        
-        query_emb = self._get_query_emb(query, 
-                                        query_id, 
-                                        emb_model=self.emb_model
-                                        )
-        similarity = torch.matmul(query_emb.cuda(), 
-                                  self.candidate_embs.cuda().T
-                                  ).cpu().view(-1)
+                query: str, 
+                query_id: int, 
+                **kwargs: Any) -> dict:
+        """
+        Forward pass to compute similarity scores for the given query.
+
+        Args:
+            query (str): Query string.
+            query_id (int): Query index.
+
+        Returns:
+            pred_dict (dict): A dictionary of candidate ids and their corresponding similarity scores.
+        """
+        query_emb = self._get_query_emb(query, query_id, emb_model=self.emb_model)
+        similarity = torch.matmul(query_emb.cuda(), self.candidate_embs.cuda().T).cpu().view(-1)
         pred_dict = {self.candidate_ids[i]: similarity[i] for i in range(len(self.candidate_ids))}
         return pred_dict

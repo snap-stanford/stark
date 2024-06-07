@@ -1,50 +1,52 @@
-import os.path as osp
+import argparse
 import json
 import os
-import argparse
+import os.path as osp
+
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 import torch
+from tqdm import tqdm
+
 from src.benchmarks import get_qa_dataset, get_semistructured_data
 from src.models import get_model
-from src.tools.args import merge_args, load_args
+from src.tools.args import load_args, merge_args
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", default="amazon", choices=['amazon', 'primekg', 'mag'])
-    parser.add_argument(
-        "--model", default="VSS", choices=["VSS", "MultiVSS", "LLMReranker"]
-    )
-    parser.add_argument("--split", default="test", 
-                        choices=["train", "val", "test", "human_generated_eval"])
 
-    # can eval on a subset only
+    # Dataset and model selection
+    parser.add_argument("--dataset", default="amazon", choices=['amazon', 'primekg', 'mag'])
+    parser.add_argument("--model", default="VSS", choices=["VSS", "MultiVSS", "LLMReranker"])
+    parser.add_argument("--split", default="test", choices=["train", "val", "test", "human_generated_eval"])
+
+    # Path settings
+    parser.add_argument("--emb_dir", type=str, required=True)
+    parser.add_argument("--output_dir", type=str, required=True)
+
+    # Evaluation settings
     parser.add_argument("--test_ratio", type=float, default=1.0)
 
-    # for multivss
+    # MultiVSS specific settings
     parser.add_argument("--chunk_size", type=int, default=None)
     parser.add_argument("--multi_vss_topk", type=int, default=None)
     parser.add_argument("--aggregate", type=str, default="max")
 
-    # for vss, multivss, and llm reranker
+    # VSS, MultiVSS, and LLMReranker settings
     parser.add_argument("--emb_model", type=str, default="text-embedding-ada-002")
 
-    # for llm reranker
-    parser.add_argument("--llm_model", type=str, default="gpt-4-1106-preview",
-                        help='the LLM to rerank candidates.')
+    # LLMReranker specific settings
+    parser.add_argument("--llm_model", type=str, default="gpt-4-1106-preview", help='the LLM to rerank candidates.')
     parser.add_argument("--llm_topk", type=int, default=10)
     parser.add_argument("--max_retry", type=int, default=3)
 
-    # path
-    parser.add_argument("--emb_dir", type=str, required=True)
-    parser.add_argument("--output_dir", type=str, required=True)
-
-    # save prediction
+    # Prediction saving settings
     parser.add_argument("--save_pred", action="store_true")
     parser.add_argument("--save_topk", type=int, default=500, help="topk predicted indices to save")
+
     return parser.parse_args()
+
 
 
 if __name__ == "__main__":

@@ -1,24 +1,33 @@
+import json
 import os
 import os.path as osp
-import gzip
-import pickle
-import json
-import torch
-import pandas as pd
-import numpy as np
-from langdetect import detect
-import gdown
-from huggingface_hub import hf_hub_download
 import zipfile
+
+import numpy as np
+import pandas as pd
+import torch
+from huggingface_hub import hf_hub_download
+from langdetect import detect
 from ogb.nodeproppred import NodePropPredDataset
 from ogb.utils.url import download_url, extract_zip
-from src.tools.process_text import clean_data, compact_text, decode_escapes
-from src.benchmarks.semistruct.knowledge_base import SemiStructureKB
-from src.tools.io import save_files, load_files
 
-PROCESSED_DATASET = {
-    "repo": "snap-stanford/STaRK-Dataset",
-    "file": "mag_processed.zip",
+from src.benchmarks.semistruct.knowledge_base import SemiStructureKB
+from src.tools.download_hf import download_hf_file, download_hf_folder
+from src.tools.io import load_files, save_files
+from src.tools.process_text import compact_text
+
+
+
+DATASET = {
+    "repo": "snap-stanford/stark",
+    'metadata': 'skb/mag/schema',
+    'raw': 'skb/mag/idx_title_abs.zip',
+    'processed': 'skb/mag/processed.zip'
+}
+
+RAW_DATA = {
+    'ogbn_papers100M': 'https://snap.stanford.edu/ogb/data/misc/ogbn_papers100M/paperinfo.zip',
+    'mag_mapping': 'https://zenodo.org/records/2628216/files'
 }
 
 class MagSemiStruct(SemiStructureKB):
@@ -26,37 +35,45 @@ class MagSemiStruct(SemiStructureKB):
     test_columns = ['title', 'abstract', 'text']
     candidate_types = ['paper']
 
-    node_type_dict =  {0: 'author', 1: 'institution', 2: 'field_of_study', 3: 'paper'}
+    node_type_dict = {0: 'author', 1: 'institution', 2: 'field_of_study', 3: 'paper'}
     edge_type_dict = {
         0: 'author___affiliated_with___institution',
         1: 'paper___cites___paper', 
         2: 'paper___has_topic___field_of_study',
         3: 'author___writes___paper'
-        }
-    node_attr_dict = {'paper': ['title', 'abstract', 'publication date', 'venue'],
-                      'author': ['name'],
-                      'institution': ['name'],
-                      'field_of_study': ['name']}
-    ogbn_papers100M_cache_url = 'https://drive.google.com/uc?id=1BWHBIukoVsCsJ2kCRPKbXXrh_rHdluIp'
-    ogbn_papers100M_url = 'https://snap.stanford.edu/ogb/data/misc/ogbn_papers100M/paperinfo.zip'
-    mag_mapping_url = 'https://zenodo.org/records/2628216/files'
+    }
+    node_attr_dict = {
+        'paper': ['title', 'abstract', 'publication date', 'venue'],
+        'author': ['name'],
+        'institution': ['name'],
+        'field_of_study': ['name']
+    }
     
-    def __init__(self, root, download_processed=True, **kwargs):
-        '''
-        Args:
-            root (str): root directory to store the dataset folder
-            download_processed (bool): whether to download the processed data
-        '''
+    def __init__(self, 
+                 root: str,
+                 download_processed: bool = True,
+                 **kwargs):
+        """
+        Initialize the MagSemiStruct class.
 
-        self.root = root 
-        schema_dir=osp.join(root, 'schema'),                       
+        Args:
+            root (str): Root directory to store the dataset folder.
+            download_processed (bool): Whether to download the processed data.
+        """
+        self.root = root
         self.raw_data_dir = osp.join(self.root, 'raw')
-        self.processed_data_dir = osp.join(self.root, 'processed')  
+        self.processed_data_dir = osp.join(self.root, 'processed')
         self.graph_data_root = osp.join(self.raw_data_dir, 'ogbn_mag')
         self.text_root = osp.join(self.raw_data_dir, 'ogbn_papers100M')
 
         # existing dirs/files
-        self.schema_dir = schema_dir
+        self.schema_dir = osp.join(root, 'schema')
+        if not osp.exists(self.schema_dir):
+            download_hf_folder(
+                DATASET["repo"], DATASET["metadata"],
+                repo_type="dataset", save_as_folder=self.schema_dir
+            )
+
         self.mag_mapping_dir = osp.join(self.graph_data_root, 'mag_mapping')
         self.ogbn_mag_mapping_dir = osp.join(self.graph_data_root, 'mapping')
         self.title_path = osp.join(self.text_root, 'paperinfo/idx_title.tsv')
@@ -72,9 +89,9 @@ class MagSemiStruct(SemiStructureKB):
         if not osp.exists(osp.join(self.processed_data_dir, 'node_info.pkl')) and download_processed:
             print('Downloading processed data...')
             processed_path = hf_hub_download(
-                PROCESSED_DATASET["repo"],
-                PROCESSED_DATASET["file"],
-                repo_type="model",
+                DATASET["repo"],
+                DATASET["processed"],
+                repo_type="dataset"
             )
             with zipfile.ZipFile(processed_path, 'r') as zip_ref:
                 zip_ref.extractall(self.root)
@@ -82,16 +99,27 @@ class MagSemiStruct(SemiStructureKB):
             print('Downloaded processed data!')
 
         if osp.exists(osp.join(self.processed_data_dir, 'node_info.pkl')):
-            print(f'loaded processed data from {self.processed_data_dir}!')
+            print(f'Loaded processed data from {self.processed_data_dir}!')
             processed_data = load_files(self.processed_data_dir)
         else:
-            print('start processing raw data')
+            print('Start processing raw data...')
             processed_data = self._process_raw()
-        processed_data.update({'node_type_dict': self.node_type_dict, 
-                               'edge_type_dict': self.edge_type_dict})
+        processed_data.update({
+            'node_type_dict': self.node_type_dict, 
+            'edge_type_dict': self.edge_type_dict
+        })
         super(MagSemiStruct, self).__init__(**processed_data, **kwargs)
 
     def load_edge(self, edge_type):
+        """
+        Load edge data for the specified edge type.
+
+        Args:
+            edge_type (str): Type of edge to load.
+
+        Returns:
+            tuple: A tuple containing edge tensor and edge numbers.
+        """
         edge_dir = osp.join(self.graph_data_root, f"raw/relations/{edge_type}/edge.csv.gz")
         edge_type_dir = osp.join(self.graph_data_root, f"raw/relations/{edge_type}/edge_reltype.csv.gz")
         num_dir = osp.join(self.graph_data_root, f"raw/relations/{edge_type}/num-edge-list.csv.gz")
@@ -107,18 +135,23 @@ class MagSemiStruct(SemiStructureKB):
         return edge, edge_num
     
     def load_meta_data(self):
-        
+        """
+        Load metadata for the MAG dataset.
+
+        Returns:
+            tuple: DataFrames for authors, fields of study, institutions, and papers.
+        """
         mag_csv = {}
         if osp.exists(osp.join(self.mag_metadata_cache_dir, 'paper_data.csv')):
-            print('start loading MAG data from cache')
+            print('Start loading MAG data from cache...')
             for t in ['author', 'institution', 'field_of_study', 'paper']:
                 mag_csv[t] = pd.read_csv(osp.join(self.mag_metadata_cache_dir, f'{t}_data.csv'))
             author_data, paper_data = mag_csv['author'], mag_csv['paper']
             field_of_study_data = mag_csv['field_of_study']
             institution_data = mag_csv['institution']
-            print('done!')
+            print('Done!')
         else:
-            print('start loading MAG data, it might take a while...')
+            print('Start loading MAG data, it might take a while...')
             full_attr_path = osp.join(self.schema_dir, 'mag.json')
             reduced_attr_path = osp.join(self.schema_dir, 'reduced_mag.json')
 
@@ -131,18 +164,18 @@ class MagSemiStruct(SemiStructureKB):
                 file = osp.join(self.mag_mapping_dir, key + '.txt.gz')
                 if not osp.exists(file):
                     try:
-                        download_url(f'{self.mag_mapping_url}/{key}.txt.gz', self.mag_mapping_dir)
+                        download_url(f'{RAW_DATA["mag_mapping"]}/{key}.txt.gz', self.mag_mapping_dir)
                     except Exception as error:
-                        print(f'Download failed or {key} data not found, please download from {self.mag_mapping_url} to {file}')
+                        print(f'Download failed or {key} data not found, please download from {RAW_DATA["mag_mapping"]} to {file}')
                         raise error
                 loaded_csv[key] = pd.read_csv(file, header=None, sep='\t', usecols=column_nums)
                 loaded_csv[key].columns = reduced_attr[key]
 
-            print('processing and merging meta data...')
-            author_data = pd.read_csv(osp.join(self.ogbn_mag_mapping_dir, f"author_entidx2name.csv.gz"), names=['id', 'AuthorId'], skiprows=[0])
-            field_of_study_data = pd.read_csv(osp.join(self.ogbn_mag_mapping_dir, f"field_of_study_entidx2name.csv.gz"), names=['id', 'FieldOfStudyId'], skiprows=[0])
-            institution_data = pd.read_csv(osp.join(self.ogbn_mag_mapping_dir, f"institution_entidx2name.csv.gz"), names=['id', 'AffiliationId'], skiprows=[0])
-            paper_data = pd.read_csv(osp.join(self.ogbn_mag_mapping_dir, f"paper_entidx2name.csv.gz"), names=['id', 'PaperId'], skiprows=[0])
+            print('Processing and merging meta data...')
+            author_data = pd.read_csv(osp.join(self.ogbn_mag_mapping_dir, "author_entidx2name.csv.gz"), names=['id', 'AuthorId'], skiprows=[0])
+            field_of_study_data = pd.read_csv(osp.join(self.ogbn_mag_mapping_dir, "field_of_study_entidx2name.csv.gz"), names=['id', 'FieldOfStudyId'], skiprows=[0])
+            institution_data = pd.read_csv(osp.join(self.ogbn_mag_mapping_dir, "institution_entidx2name.csv.gz"), names=['id', 'AffiliationId'], skiprows=[0])
+            paper_data = pd.read_csv(osp.join(self.ogbn_mag_mapping_dir, "paper_entidx2name.csv.gz"), names=['id', 'PaperId'], skiprows=[0])
 
             loaded_csv['Papers'].rename(columns={'JournalId ': 'JournalId', 'Rank': 'PaperRank', 'CitationCount': 'PaperCitationCount'}, inplace=True)
             loaded_csv['Journals'].rename(columns={'DisplayName': 'JournalDisplayName', 'Rank': 'JournalRank', 'CitationCount': 'JournalCitationCount', 'PaperCount': 'JournalPaperCount'}, inplace=True)
@@ -169,10 +202,12 @@ class MagSemiStruct(SemiStructureKB):
                     if 'rank' in col.lower() or 'count' in col.lower() or 'level' in col.lower() or 'year' in col.lower() or col.lower().endswith('id'):
                         csv_data[col] = csv_data[col].apply(lambda x: int(x) if isinstance(x, float) else x)
             
-            mag_csv = {'author': author_data, 
-                       'institution': institution_data, 
-                       'field_of_study': field_of_study_data, 
-                       'paper': paper_data}
+            mag_csv = {
+                'author': author_data, 
+                'institution': institution_data, 
+                'field_of_study': field_of_study_data, 
+                'paper': paper_data
+            }
             
             for t in ['author', 'institution', 'field_of_study', 'paper']:
                 mag_csv[t].to_csv(osp.join(self.mag_metadata_cache_dir, f'{t}_data.csv'), index=False)
@@ -195,61 +230,89 @@ class MagSemiStruct(SemiStructureKB):
         return author_data, field_of_study_data, institution_data, paper_data
 
     def load_english_paper_text(self, mag_ids, download_cache=True):
+        """
+        Load English text data for the papers.
+
+        Args:
+            mag_ids (list): List of MAG IDs for the papers.
+            download_cache (bool): Whether to download cached data.
+
+        Returns:
+            DataFrame: DataFrame containing English titles and abstracts.
+        """
         def is_english(text):
             try:
                 return detect(text) == 'en'
             except:
                 return False
+
         if not osp.exists(self.merged_filtered_path):
             if download_cache:
-                # We provided cache here to avoid processing the large file for a long time
-                try:
-                    gdown.download(self.ogbn_papers100M_cache_url, 
-                                   self.merged_filtered_path, quiet=False)
-                except Exception as error:
-                    print('Try upgrading your gdown package with `pip install gdown --upgrade`')
-                    raise error
+                download_hf_file(
+                    DATASET["repo"], DATASET["raw"],
+                    repo_type="dataset", save_as_path=self.merged_filtered_path
+                )
             else:
                 if not osp.exists(self.title_path):  
-                    raw_text_path = download_url(self.ogbn_papers100M_url, self.text_root)
+                    raw_text_path = download_url(RAW_DATA['ogbn_papers100M'], self.text_root)
                     extract_zip(raw_text_path, self.text_root)
-                print('start read title...')
+                print('Start reading title...')
                 title = pd.read_csv(self.title_path, sep='\t', header=None)
                 title.columns = ["mag_id", "title"]
-                print('filtering title in English...')
+                print('Filtering titles in English...')
 
-                # filter the title that's in mag_ids
+                # filter the titles that are in mag_ids
                 title = title[title['mag_id'].apply(lambda x: x in mag_ids)]
                 title_en = title[title['title'].apply(is_english)]
 
-                print('start read abstract...')
+                print('Start reading abstract...')
                 abstract = pd.read_csv(self.abstract_path, sep='\t', header=None)
                 abstract.columns = ["mag_id", "abstract"]
-                print('filtering abstract in English...')
+                print('Filtering abstracts in English...')
 
                 abstract = abstract[abstract['mag_id'].apply(lambda x: x in mag_ids)]
                 abstract_en = abstract[abstract['abstract'].apply(is_english)]
 
-                print('start merging title and abstract...')
-                title_abs_en = pd.merge(title, abs, how="outer", on="mag_id", sort=True)
+                print('Start merging titles and abstracts...')
+                title_abs_en = pd.merge(title, abstract, how="outer", on="mag_id", sort=True)
                 title_abs_en.to_csv(self.merged_filtered_path, sep="\t", header=True, index=False)
                 
-        print('loading merged and filtered title and abstract (English)...')
+        print('Loading merged and filtered titles and abstracts (English)...')
         title_abs_en = pd.read_csv(self.merged_filtered_path, sep='\t')
         title_abs_en.columns = ['mag_id', 'title', 'abstract']
-        print('done!')
+        print('Done!')
 
         return title_abs_en
 
     def get_map(self, df):
+        """
+        Create mappings between MAG IDs and internal IDs.
+
+        Args:
+            df (DataFrame): DataFrame containing MAG IDs.
+
+        Returns:
+            tuple: Mappings from MAG IDs to internal IDs and vice versa.
+        """
         mag2id, id2mag = {}, {}
         for idx in range(len(df)):
             mag2id[df['mag_id'][idx]] = idx
             id2mag[idx] = df['mag_id'][idx]
         return mag2id, id2mag
     
-    def get_doc_info(self, idx, compact=False, 
-                     add_rel=True, n_rel=-1) -> str:
+    def get_doc_info(self, idx, compact=False, add_rel=True, n_rel=-1) -> str:
+        """
+        Get document information for the specified node.
+
+        Args:
+            idx (int): Index of the node.
+            compact (bool): Whether to compact the text.
+            add_rel (bool): Whether to add relationship information.
+            n_rel (int): Number of relationships to add.
+
+        Returns:
+            str: Document information.
+        """
         node = self[idx]
         if node.type == 'author':
             doc = f'- author name: {node.DisplayName}\n'
@@ -260,21 +323,21 @@ class MagSemiStruct(SemiStructureKB):
             doc = doc.replace('-1', 'Unknown')
 
         elif node.type == 'paper':
-            doc = ' - paper title: ' + node.title + '\n'
+            doc = f' - paper title: {node.title}\n'
             doc += ' - abstract: ' + node.abstract.replace('\r', '').rstrip('\n') + '\n'
             if str(node.Date) != '-1':
-                doc += ' - publication date: ' + str(node.Date) + '\n'
+                doc += f' - publication date: {node.Date}\n'
             if str(node.OriginalVenue) != '-1':
-                doc += ' - venue: ' + node.OriginalVenue + '\n'
+                doc += f' - venue: {node.OriginalVenue}\n'
             elif str(node.JournalDisplayName) != '-1':
-                doc += ' - journal: ' + node.JournalDisplayName + '\n'
+                doc += f' - journal: {node.JournalDisplayName}\n'
             elif str(node.ConferenceSeriesDisplayName) != '-1':
-                doc += ' - conference: ' + node.ConferenceSeriesDisplayName + '\n'
+                doc += f' - conference: {node.ConferenceSeriesDisplayName}\n'
             elif str(node.ConferenceInstancesDisplayName) != '-1':
-                doc += ' - conference: ' + node.ConferenceInstancesDisplayName + '\n'
+                doc += f' - conference: {node.ConferenceInstancesDisplayName}\n'
 
         elif node.type == 'field_of_study':
-            doc = ' - field of study: ' + node.DisplayName + '\n' 
+            doc = f' - field of study: {node.DisplayName}\n' 
             if node.PaperCount != -1:
                 doc += f'- field paper count: {node.PaperCount}\n'
             if node.CitationCount != -1:
@@ -282,7 +345,7 @@ class MagSemiStruct(SemiStructureKB):
             doc = doc.replace('-1', 'Unknown')
             
         elif node.type == 'institution':
-            doc = ' - institution: ' + node.DisplayName + '\n' 
+            doc = f' - institution: {node.DisplayName}\n' 
             if node.PaperCount != -1:
                 doc += f'- institution paper count: {node.PaperCount}\n'
             if node.CitationCount != -1:
@@ -297,11 +360,22 @@ class MagSemiStruct(SemiStructureKB):
         return doc
 
     def get_rel_info(self, idx, rel_types=None, n_rel=-1):
+        """
+        Get relationship information for the specified node.
+
+        Args:
+            idx (int): Index of the node.
+            rel_types (list): List of relationship types.
+            n_rel (int): Number of relationships.
+
+        Returns:
+            str: Relationship information.
+        """
         doc = ''
         rel_types = self.rel_type_lst() if rel_types is None else rel_types
         for edge_t in rel_types:
             node_ids = torch.LongTensor(self.get_neighbor_nodes(idx, edge_t)).tolist()
-            if len(node_ids) == 0: 
+            if not node_ids:
                 continue
             node_type = self.node_types[node_ids[0]]
             str_edge = edge_t.replace('___', ' ')
@@ -314,43 +388,50 @@ class MagSemiStruct(SemiStructureKB):
                 if self[i].type == 'paper':
                     neighbors.append(f'\"{self[i].title}\"')
                 elif self[i].type == 'author':
-                    if not str(self[i].DisplayName) == '-1':
+                    if str(self[i].DisplayName) != '-1':
                         institutions = self.get_neighbor_nodes(i, "author___affiliated_with___institution")
                         for inst in institutions:
                             assert self[inst].type == 'institution'
-                        str_institutions = [self[j].DisplayName for j in institutions if not str(self[j].DisplayName) == '-1']
-                        if len(str_institutions) > 0:
+                        str_institutions = [self[j].DisplayName for j in institutions if str(self[j].DisplayName) != '-1']
+                        if str_institutions:
                             str_institutions = ', '.join(str_institutions)
                             neighbors.append(f'{self[i].DisplayName} ({str_institutions})')
                         else:
                             neighbors.append(f'{self[i].DisplayName}')
                 else:
-                    if not str(self[i].DisplayName) == '-1':
+                    if str(self[i].DisplayName) != '-1':
                         neighbors.append(f'{self[i].DisplayName}')
             neighbors = '(' + ', '.join(neighbors) + '),'
             doc += neighbors
-        if len(doc): 
+        if doc: 
             doc = '- relations:\n' + doc
         return doc 
     
     def _process_raw(self):
+        """
+        Process raw data for the MAG dataset.
+
+        Returns:
+            dict: Processed data.
+        """
         NodePropPredDataset(name='ogbn-mag', root=self.raw_data_dir)
         author_data, field_of_study_data, institution_data, paper_data = self.load_meta_data()
         paper_text_data = self.load_english_paper_text(paper_data['mag_id'].tolist())
 
-        print('precessing graph data...')
+        print('Processing graph data...')
         author_id_to_mag = {row['id']: row['mag_id'] for _, row in author_data.iterrows()}
         institution_id_to_mag = {row['id']: row['mag_id'] for _, row in institution_data.iterrows()}
         field_of_study_id_to_mag = {row['id']: row['mag_id'] for _, row in field_of_study_data.iterrows()}
-        paper_mapping = pd.read_csv(osp.join(self.ogbn_mag_mapping_dir, f"paper_entidx2name.csv.gz"), names=['id', 'mag_id'], skiprows=[0])
+        paper_mapping = pd.read_csv(osp.join(self.ogbn_mag_mapping_dir, "paper_entidx2name.csv.gz"), names=['id', 'mag_id'], skiprows=[0])
         mag_to_paper_id, paper_id_to_mag = self.get_map(paper_mapping)
 
         unique_paper_id = paper_text_data['mag_id'].unique()
         unique_paper_id = torch.unique(torch.tensor(unique_paper_id))
         node_type_edge = {
-            0:'author___writes___paper', 
-            2:'paper___has_topic___field_of_study', 
-            3:'paper___cites___paper'}
+            0: 'author___writes___paper', 
+            2: 'paper___has_topic___field_of_study', 
+            3: 'paper___cites___paper'
+        }
         node_type_overlapping_node = {}
         node_type_overlapping_edge = {}
 
@@ -362,7 +443,7 @@ class MagSemiStruct(SemiStructureKB):
             unique_paper_id[mask] = v
 
         # load edge data
-        print('start loading edge data')
+        print('Start loading edge data...')
         for node_type, paper_rel in node_type_edge.items():
             print(node_type, paper_rel)
             edge, edge_num = self.load_edge(paper_rel)
@@ -426,10 +507,12 @@ class MagSemiStruct(SemiStructureKB):
         tot_n = sum([len(node_type_overlapping_node[i]) for i in range(4)])
 
         # the order of re-indexing is author, institution, field_of_study, paper
-        domain_mappings = {0: author_id_to_mag, 
-                           1: institution_id_to_mag, 
-                           2: field_of_study_id_to_mag, 
-                           3: paper_id_to_mag}
+        domain_mappings = {
+            0: author_id_to_mag, 
+            1: institution_id_to_mag, 
+            2: field_of_study_id_to_mag, 
+            3: paper_id_to_mag
+        }
         new_domain_mappings = {}
         domain_old_to_new = {}
         id_to_mag = {}
@@ -437,7 +520,7 @@ class MagSemiStruct(SemiStructureKB):
         node_type_overlapping_node_sort = {k: node_type_overlapping_node[k] for k in sorted(node_type_overlapping_node.keys())}
 
         # start to re-index 
-        print('start re-indexing')
+        print('Start re-indexing...')
         for i, remain_node in node_type_overlapping_node_sort.items():
             old_to_new_mappings = {key: id + offset for id, key in enumerate(remain_node.tolist())}
             updated_dict = {value: domain_mappings[i][key] for key, value in old_to_new_mappings.items()}
@@ -457,7 +540,8 @@ class MagSemiStruct(SemiStructureKB):
             0: [domain_old_to_new[0], domain_old_to_new[3]], 
             1: [domain_old_to_new[0], domain_old_to_new[1]], 
             2: [domain_old_to_new[3], domain_old_to_new[2]], 
-            3: [domain_old_to_new[3], domain_old_to_new[3]]}
+            3: [domain_old_to_new[3], domain_old_to_new[3]]
+        }
 
         for i, remain_edge in node_type_overlapping_edge.items():
             edges = remain_edge[:2]
@@ -496,7 +580,7 @@ class MagSemiStruct(SemiStructureKB):
         paper_data.dropna(subset=['new_id'], inplace=True)
         paper_data['new_id'] = paper_data['new_id'].astype(int)
 
-        # add text data onto the graph(paper nodes)
+        # add text data onto the graph (paper nodes)
         merged_df = pd.merge(paper_data, paper_text_data, on='mag_id', how='outer')
         merged_df.dropna(subset=['new_id'], inplace=True)
         merged_df['new_id'] = merged_df['new_id'].astype(int)
@@ -521,9 +605,9 @@ class MagSemiStruct(SemiStructureKB):
             'edge_index': edge_index, 
             'edge_types': edge_types,
             'node_types': node_types
-            }
+        }
 
-        print('start saving processed data')
+        print('Start saving processed data...')
         save_files(save_path=self.processed_data_dir, **processed_data)
 
         return processed_data

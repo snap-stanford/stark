@@ -6,18 +6,18 @@ from tqdm import tqdm
 import gdown
 
 
-
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", default="amazon")
     parser.add_argument("--emb_dir", default="emb", type=str)
     return parser.parse_args()
 
+
 if __name__ == "__main__":
     args = parse_args()
 
     emb_model = 'text-embedding-ada-002'
-    query_emb_token = {'amazon': '1-zyI84MMh6r66-faOFSc2rWTeIUw3VZW',
+    query_emb_token = {'amazon': '1QZLhOa_Uh6_Xf85My88XIfOLnmD-wcuq',
                        'mag': '1HSfUrSKBa7mJbECFbnKPQgd6HSsI8spT',
                        'primekg': '1MshwJttPZsHEM2cKA5T13SIrsLeBEdyU'}
     node_emb_token = {'amazon': '18NU7tw_Tcyp9YobxKubLISBncwLaAiJz',

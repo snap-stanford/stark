@@ -1,17 +1,12 @@
-import sys
-
 import os
 import os.path as osp
+import random
+import sys
+import argparse
 
 import torch
-import random
-import json
-import time
-import pickle
-import argparse
-import numpy as np
-import pandas as pd
 from tqdm import tqdm
+
 sys.path.append('.')
 from src.benchmarks import get_semistructured_data, get_qa_dataset
 from src.tools.api import get_openai_embeddings
@@ -19,9 +14,9 @@ from src.tools.api import get_openai_embeddings
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', default='amazon', 
-                        choices=['amazon', 'primekg', 'mag']
-                        )
+
+    # Dataset and embedding model selection
+    parser.add_argument('--dataset', default='amazon', choices=['amazon', 'primekg', 'mag'])
     parser.add_argument('--emb_model', default='text-embedding-ada-002', 
                         choices=[
                             'text-embedding-ada-002', 
@@ -29,19 +24,25 @@ def parse_args():
                             'text-embedding-3-large'
                             ]
                         )
-    parser.add_argument('--mode', default='doc', choices=['doc', 'query'])
-    parser.add_argument("--emb_dir", default="emb/", type=str)
-    parser.add_argument('--add_rel', action='store_true', default=False, 
-                        help='add relation to the text')
-    parser.add_argument('--compact', action='store_true', default=False, 
-                        help='make the text compact when input to the model')
-    parser.add_argument("--human_generated_eval", action="store_true",
-                        help="if mode is `query`, then generating query embeddings on human generated evaluation split")
 
+    # Mode settings
+    parser.add_argument('--mode', default='doc', choices=['doc', 'query'])
+
+    # Path settings
+    parser.add_argument("--emb_dir", default="emb/", type=str)
+
+    # Text settings
+    parser.add_argument('--add_rel', action='store_true', default=False, help='add relation to the text')
+    parser.add_argument('--compact', action='store_true', default=False, help='make the text compact when input to the model')
+
+    # Evaluation settings
+    parser.add_argument("--human_generated_eval", action="store_true", help="if mode is `query`, then generating query embeddings on human generated evaluation split")
+
+    # Batch and node settings
     parser.add_argument("--batch_size", default=100, type=int)
     parser.add_argument("--n_max_nodes", default=10, type=int)
+
     return parser.parse_args()
-    
     
 
 if __name__ == '__main__':
@@ -82,9 +83,7 @@ if __name__ == '__main__':
         texts.append(text)
         indices.append(idx)
         
-    
     print(f'Generating embeddings for {len(texts)} texts...')
-    # try:
     for i in tqdm(range(0, len(texts), args.batch_size)):
         batch_texts = texts[i:i+args.batch_size]
         batch_embs = get_openai_embeddings(
@@ -95,8 +94,6 @@ if __name__ == '__main__':
         batch_indices = indices[i:i+args.batch_size]
         for idx, emb in zip(batch_indices, batch_embs):
             emb_dict[idx] = emb
-    # except Exception as e:
-        # print(f'Error: {e}')
         
     torch.save(emb_dict, emb_path)
     print(f'Saved {len(emb_dict)} embeddings to {emb_path}!')
