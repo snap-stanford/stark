@@ -48,5 +48,5 @@ def complete_text_hf(message,
         except Exception as e:
             print(cnt, "=>", e)
             time.sleep(sleep_time)
-    raise e
+            raise e
 

@@ -1,8 +1,5 @@
-import os.path as osp
-
 import numpy as np
 import torch
-from pyvis.network import Network
 from torch_geometric.utils import is_undirected, to_undirected
 
 from src.tools.graph import k_hop_subgraph
@@ -280,30 +277,3 @@ class SemiStructureKB:
         edge_types = self.edge_types[edge_mask]
         return subset, edge_index, node_types, edge_types
         
-    def visualize(self, path='.'):
-        """
-        Visualize the graph.
-
-        Args:
-            path (str): Path to save the visualization.
-        """
-        net = Network()
-        for idx in range(self.num_nodes()):
-            try:
-                net.add_node(
-                    idx, label=getattr(self[idx], self.node_type_dict[self.node_types[idx].item()])[:1], 
-                    color=color_types[self.node_types[idx].item()]
-                )
-            except AttributeError:
-                net.add_node(
-                    idx, label=getattr(self[idx], 'title')[:1], 
-                    color=color_types[self.node_types[idx].item()]
-                )
-                
-        for idx in range(self.num_edges()):
-            net.add_edge(
-                self.edge_index[0][idx].item(), self.edge_index[1][idx].item(), 
-                color=color_types[self.edge_types[idx].item()]
-            )
-        net.toggle_physics(True)
-        net.show(osp.join(path, 'nodes.html'), notebook=False)

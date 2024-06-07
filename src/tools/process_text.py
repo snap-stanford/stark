@@ -3,10 +3,8 @@ import string
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import re
 from collections import Counter
+from nltk.corpus import wordnet
 
-
-import codecs
-import re
 import codecs
 
 
@@ -155,8 +153,7 @@ ABERRANT_PLURAL_MAP = {
 
 VOWELS = set('aeiou')
 
-import nltk
-from nltk.corpus import wordnet
+
 
 def synonym_extractor(phrase):
     synonyms = []
