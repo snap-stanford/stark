@@ -3,7 +3,7 @@
         "chunk_size": 256,
         "multi_vss_topk": 50
     },
-    "primekg": {
+    "prime": {
         "chunk_size": 256, 
         "multi_vss_topk": 50
     },

@@ -8,16 +8,16 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
-from src.benchmarks import get_qa_dataset, get_semistructured_data
-from src.models import get_model
-from src.tools.args import load_args, merge_args
+from stark_qa import load_qa, load_skb
+from models import get_model
+from stark_qa.tools.args import load_args, merge_args
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
 
     # Dataset and model selection
-    parser.add_argument("--dataset", default="amazon", choices=['amazon', 'primekg', 'mag'])
+    parser.add_argument("--dataset", default="amazon", choices=['amazon', 'prime', 'mag'])
     parser.add_argument("--model", default="VSS", choices=["VSS", "MultiVSS", "LLMReranker"])
     parser.add_argument("--split", default="test", choices=["train", "val", "test", "human_generated_eval"])
 
@@ -76,8 +76,8 @@ if __name__ == "__main__":
         else osp.join(output_dir, f"eval_metrics_{args.split}_{args.test_ratio}.json")
     )
 
-    kb = get_semistructured_data(args.dataset)
-    qa_dataset = get_qa_dataset(args.dataset, human_generated_eval=args.split == 'human_generated_eval')
+    kb = load_skb(args.dataset)
+    qa_dataset = load_qa(args.dataset, human_generated_eval=args.split == 'human_generated_eval')
     model = get_model(args, kb)
 
     split_idx = qa_dataset.get_idx_split(test_ratio=args.test_ratio)
