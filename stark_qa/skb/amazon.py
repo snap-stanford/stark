@@ -524,29 +524,48 @@ class AmazonSKB(SKB):
         """
         node_info = {idx: {'review': [], 'qa': []} for idx in range(len(df_meta))}
         
-        def assign_colors(df_review: pd.DataFrame, lower_limit: int = 20) -> dict:
-            df_review = df_review[['asin', 'style']].dropna(subset=['style'])
+        ###################### Assign color ########################
+        def assign_colors(df_review, lower_limit=20):
+            # asign to color
+            df_review = df_review[['asin', 'style']]
+            df_review = df_review.dropna(subset=['style'])
             raw_color_dict = {}
             for idx, row in tqdm(df_review.iterrows()):
                 asin, style = row['asin'], row['style']
                 for key in style.keys():
                     if 'color' in key.lower():
-                        raw_color_dict.setdefault(asin, []).append(
-                            style[key].strip().lower() if isinstance(style[key], str) else style[key][0].strip()
-                        )
+                        try:
+                            raw_color_dict[asin] 
+                        except:
+                            raw_color_dict[asin] = []
+                        raw_color_dict[asin].append(
+                            style[key].strip().lower() if isinstance(style[key], str) else style[key][0].strip())
             
             all_color_values = []
-            for colors in raw_color_dict.values():
-                all_color_values.extend(set(colors))
+            for asin in raw_color_dict.keys():
+                raw_color_dict[asin] = list(set(raw_color_dict[asin]))
+                all_color_values.extend(raw_color_dict[asin])
             
+            print('number of all colors', len(all_color_values))
             color_counter = Counter(all_color_values)
-            selected_colors = [
-                color for color, count in color_counter.items() 
-                if count > lower_limit and 2 < len(color) < 5 and not color.isnumeric()
-            ]
+            print('number of unique colors', len(color_counter))
+            color_counter = {k: v for k, v in sorted(color_counter.items(), key=lambda item: item[1], reverse=True)}
+            selected_colors = []
+            for color, number in color_counter.items():
+                if number > lower_limit and len(color) > 2 and len(color.split(' ')) < 5 and color.isnumeric() is False:
+                    selected_colors.append(color)
+            print('number of selected colors', len(selected_colors))
             
-            filtered_color_dict = {asin: [color for color in colors if color in selected_colors] 
-                                   for asin, colors in raw_color_dict.items()}
+            filtered_color_dict = {}
+            total_color_connections = 0
+            for asin in raw_color_dict.keys():
+                filtered_color_dict[asin] = []
+                for value in raw_color_dict[asin]:
+                    if value in selected_colors:
+                        filtered_color_dict[asin].append(value)
+                total_color_connections += len(filtered_color_dict[asin])
+            print('number of linked products', len(filtered_color_dict))
+            print('number of total connections', total_color_connections)
             return filtered_color_dict
     
         filtered_color_dict_path = os.path.join(self.root, 'intermediate', 'filtered_color_dict.pkl')
@@ -564,6 +583,7 @@ class AmazonSKB(SKB):
             if asin in filtered_color_dict and filtered_color_dict[asin]:
                 node_info[idx]['color'] = filtered_color_dict[asin]
         
+        ###################### Assign brand and category ########################
         sub_categories = set(json.load(open(self.sub_category_path, 'r')))
         for df_meta_i in tqdm(df_meta.itertuples()):
             asin = df_meta_i.asin
@@ -583,6 +603,7 @@ class AmazonSKB(SKB):
                 else:
                     node_info[idx][column] = clean_data(getattr(df_meta_i, column))
         
+        ###################### Process review and QA ########################
         for name, df, colunm_names in zip(['review', 'qa'], 
                                           [df_review, df_qa], 
                                           [self.review_columns, self.qa_columns]):
