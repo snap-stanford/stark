@@ -18,8 +18,8 @@ from stark_qa.tools.download_hf import download_hf_file
 
 DATASET = {
     "repo": "snap-stanford/stark",
-    "raw": "skb/primekg/raw.zip",
-    "processed": "skb/primekg/processed.zip",
+    "raw": "skb/prime/raw.zip",
+    "processed": "skb/prime/processed.zip",
 }
 
 class PrimeSKB(SKB):
