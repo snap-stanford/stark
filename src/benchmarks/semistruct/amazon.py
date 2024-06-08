@@ -583,15 +583,14 @@ class AmazonSemiStruct(SemiStructureKB):
                 else:
                     node_info[idx][column] = clean_data(getattr(df_meta_i, column))
         
-        review_columns = self.review_columns
-        review_columns.remove('style')
-        for name, df, columns in zip(['review', 'qa'], 
-                                     [df_review, df_qa], 
-                                     [review_columns, self.qa_columns]):
-            for df_i in tqdm(df.itertuples()):
-                asin = df_i.asin
+        for name, df, colunm_names in zip(['review', 'qa'], 
+                                          [df_review, df_qa], 
+                                          [self.review_columns, self.qa_columns]):
+            for i in tqdm(range(len(df))):
+                df_i = df.iloc[i]
+                asin = df_i['asin']
                 idx = self.asin2id[asin]
-                node_info[idx][name].append(df_row_to_dict(df_i, columns))
+                node_info[idx][name].append(df_row_to_dict(df_i, colunm_names))
         
         return node_info
 

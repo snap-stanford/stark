@@ -1,16 +1,9 @@
 __pycache__
 emb/
+data/
 output/
 config/claude_api_key.txt
 config/openai_api_key.txt
-data/amazon/raw/
-data/mag/raw/
-data/primekg/raw/
-data/primekg/raw.zip
-data/amazon/processed/
-data/amazon/intermediate/
-data/mag/processed/
-data/primekg/processed/
 
 draft.ipynb
 download_mag.py

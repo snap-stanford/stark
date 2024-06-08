@@ -4,6 +4,7 @@ from typing import Any
 from src.models.model import ModelForSemiStructQA
 from tqdm import tqdm
 
+
 class VSS(ModelForSemiStructQA):
     
     def __init__(self, 

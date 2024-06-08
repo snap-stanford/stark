@@ -10,6 +10,7 @@ from huggingface_hub import hf_hub_download
 from langdetect import detect
 from ogb.nodeproppred import NodePropPredDataset
 from ogb.utils.url import download_url, extract_zip
+from tqdm import tqdm
 
 from src.benchmarks.semistruct.knowledge_base import SemiStructureKB
 from src.tools.download_hf import download_hf_file, download_hf_folder
@@ -49,10 +50,7 @@ class MagSemiStruct(SemiStructureKB):
         'field_of_study': ['name']
     }
     
-    def __init__(self, 
-                 root: str,
-                 download_processed: bool = True,
-                 **kwargs):
+    def __init__(self, root, download_processed=True, **kwargs):
         """
         Initialize the MagSemiStruct class.
 
@@ -248,10 +246,12 @@ class MagSemiStruct(SemiStructureKB):
 
         if not osp.exists(self.merged_filtered_path):
             if download_cache:
+                merged_filtered_zip_path = self.merged_filtered_path.replace('tsv', 'zip')
                 download_hf_file(
                     DATASET["repo"], DATASET["raw"],
-                    repo_type="dataset", save_as_path=self.merged_filtered_path
+                    repo_type="dataset", save_as_file=merged_filtered_zip_path
                 )
+                extract_zip(merged_filtered_zip_path, osp.dirname(self.merged_filtered_path))
             else:
                 if not osp.exists(self.title_path):  
                     raw_text_path = download_url(RAW_DATA['ogbn_papers100M'], self.text_root)
@@ -369,7 +369,7 @@ class MagSemiStruct(SemiStructureKB):
             n_rel (int): Number of relationships.
 
         Returns:
-            str: Relationship information.
+            doc (str): Relationship information.
         """
         doc = ''
         rel_types = self.rel_type_lst() if rel_types is None else rel_types
@@ -412,7 +412,7 @@ class MagSemiStruct(SemiStructureKB):
         Process raw data for the MAG dataset.
 
         Returns:
-            dict: Processed data.
+            processed_data (dict): Processed data.
         """
         NodePropPredDataset(name='ogbn-mag', root=self.raw_data_dir)
         author_data, field_of_study_data, institution_data, paper_data = self.load_meta_data()
@@ -435,12 +435,10 @@ class MagSemiStruct(SemiStructureKB):
         node_type_overlapping_node = {}
         node_type_overlapping_edge = {}
 
-        # from mag_id to id
-        for k, v in mag_to_paper_id.items():
-            if k not in unique_paper_id:
-                continue
-            mask = unique_paper_id == k
-            unique_paper_id[mask] = v
+        # # from mag_id to id
+        unique_paper_id_list = unique_paper_id.tolist()
+        mapping_list = [mag_to_paper_id.get(k, k) for k in tqdm(unique_paper_id_list)]
+        unique_paper_id = torch.tensor(mapping_list)
 
         # load edge data
         print('Start loading edge data...')
@@ -461,7 +459,7 @@ class MagSemiStruct(SemiStructureKB):
             else:
                 edge = edge.t()
                 connected_edges_list = [] 
-                for target_node in unique_paper_id:
+                for target_node in tqdm(unique_paper_id):
                     # Find the edges connected to the current target node
                     if node_type == 0:
                         mask = edge[:, 1] == target_node.item()
@@ -474,7 +472,6 @@ class MagSemiStruct(SemiStructureKB):
                     connected_edges_list.append(current_connected_edges)
                     del mask
                     del current_connected_edges
-                    # print(len(connected_edges_list))
 
                 connected_edges = torch.cat(connected_edges_list, dim=0)
                 if node_type == 0:
@@ -543,7 +540,7 @@ class MagSemiStruct(SemiStructureKB):
             3: [domain_old_to_new[3], domain_old_to_new[3]]
         }
 
-        for i, remain_edge in node_type_overlapping_edge.items():
+        for i, remain_edge in tqdm(node_type_overlapping_edge.items()):
             edges = remain_edge[:2]
             edge_types = remain_edge[2]
             new_edges = edges.clone()
@@ -591,7 +588,7 @@ class MagSemiStruct(SemiStructureKB):
         node_frame = {0: author_data, 1: institution_data, 2: field_of_study_data, 3: merged_df}
         node_info = {}
         node_types = []
-        for node_type, frame in node_frame.items():
+        for node_type, frame in tqdm(node_frame.items()):
             for idx, row in frame.iterrows():
                 # csv_row to dict
                 node_info[row['new_id']] = row.to_dict()
