@@ -6,9 +6,6 @@ from stark_qa.tools.graph import k_hop_subgraph
 from stark_qa.tools.node import Node, register_node
 
 
-color_types = ['#97c2fc', 'lightgreen', 'lightpink', 'lightpurple']
-
-
 class SKB:
     def __init__(self, 
                  node_info: dict, 

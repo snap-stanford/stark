@@ -20,18 +20,19 @@ def download_hf_file(repo, file, repo_type="dataset", save_as_file=None):
     
     # Determine the save path
     if save_as_file is None:
-        save_as_file = os.path.basename(file)
+        return file_path
     
     # Create necessary directories
     os.makedirs(os.path.dirname(save_as_file), exist_ok=True)
     
     # Copy the downloaded file to the desired location
-    shutil.copy2(file_path, save_as_file)
+    if not os.path.exists(save_as_file) and file_path != save_as_file:
+        shutil.copy2(file_path, save_as_file)
     
     print(f"Downloaded <file:{file}> from <repo:{repo}> to <path:{save_as_file}>!")
+    return save_as_file
 
-
-def download_hf_folder(repo, folder, repo_type="dataset", save_as_folder="data/"):
+def download_hf_folder(repo, folder, repo_type="dataset", save_as_folder=None):
     """
     Downloads a folder from a Hugging Face repository and saves it to the specified directory.
 
@@ -51,8 +52,13 @@ def download_hf_folder(repo, folder, repo_type="dataset", save_as_folder="data/"
     # Download and save each file in the folder
     for file in folder_files:
         file_path = hf_hub_download(repo, file, repo_type=repo_type)
-        new_file_path = os.path.join(save_as_folder, os.path.relpath(file, folder))
-        os.makedirs(os.path.dirname(new_file_path), exist_ok=True)
-        shutil.copy2(file_path, new_file_path)
-    
-    print(f"Downloaded <folder:{folder}> with {len(folder_files)} files from <repo:{repo}> to <path:{save_as_folder}>!")
+        if save_as_folder is not None:  
+            new_file_path = os.path.join(save_as_folder, os.path.relpath(file, folder))
+            os.makedirs(os.path.dirname(new_file_path), exist_ok=True)
+            if not os.path.exists(new_file_path) and file_path != new_file_path:
+                shutil.copy2(file_path, new_file_path)
+        else:
+            # get the upper dir absolute dir name of the file
+            save_as_folder = os.path.dirname(os.path.dirname(file_path))
+    print(f"Use file from {file_path}.")
+    return save_as_folder
