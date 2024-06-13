@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stark_qa"
+version = "0.1.0"
+dependencies = [
+    "anthropic",
+    "bs4",
+    "gdown",
+    "huggingface_hub",
+    "langchain",
+    "langdetect",
+    "multiprocess",
+    "nltk",
+    "numpy",
+    "ogb",
+    "openai",
+    "pandas",
+    "PyTDC",
+    "torch",
+    "torch_geometric",
+    "torchmetrics",
+    "tqdm",
+    "transformers",
+]
+requires-python = ">=3.8,<3.12"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+authors = [
+  { name="STaRK team", email="stark-qa@cs.stanford.edu" },
+]
+maintainers = [
+  { name="STaRK team", email="stark-qa@cs.stanford.edu" },
+]
+description = "Benchmarking LLM Retrieval on Textual and Relational Knowledge Bases"
+readme = "README.md"
+license = {text = "MIT License"}
+keywords = ["nlp", "information-retrieval", "graph", "knowledge-base", "semi-structured-data", "multimodal", "llm"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["stark_qa*"]  
+namespaces = false
+
+[project.urls]
+Homepage = "https://stark.stanford.edu/"
+Repository = "https://github.com/snap-stanford/stark.git"
