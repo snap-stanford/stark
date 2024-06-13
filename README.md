@@ -16,6 +16,7 @@
 **Interactive interface:** [STaRK SKB Explorer](https://stark.stanford.edu/skb_explorer.html)
 
 ## NEWS
+- **[Jun 2024]** We make our benchmark as a pip package [stark-qa](https://pypi.org/project/stark-qa/). You can directly load the data from the package now!
 - **[Jun 2024]** We migrate our data to [Hugging Face](https://huggingface.co/datasets/snap-stanford/stark)! You don't need to change anything, the data will be automatically downloaded.
 - **[May 2024]** 🔥 We have augmented our benchmark with three high-quality human-generated query datasets which are open to access. See more details in our [updated arxiv](https://arxiv.org/abs/2404.13207)! 
 - **[May 9th 2024]** We release [STaRK SKB Explorer](https://stark.stanford.edu/skb_explorer.html), an interactive interface for you to explore our knowledge bases!
@@ -50,7 +51,15 @@ requirements in queries.
 # Access benchmark data
 
 ## 1) Env Setup
-Create a conda env with python 3.8 and install required packages in `requirements.txt`.
+
+### From pip (recommended)
+With python >=3.8 and <3.12
+```bash
+pip install stark-qa
+```
+
+### From source
+Create a conda env with python >=3.8 and <3.12 and install required packages in `requirements.txt`.
 ```bash
 conda create -n stark python=3.8 
 conda activate stark
@@ -58,8 +67,6 @@ pip install -r requirements.txt
 ```
 
 ## 2) Data loading 
-
-### Demo: See [Get Started](https://stark.stanford.edu/get_started.html) or [`load_dataset.ipynb`](https://github.com/snap-stanford/stark/blob/main/load_dataset.ipynb) for more
 
 ```python
 from stark_qa import load_qa, load_skb
@@ -71,8 +78,10 @@ qa_dataset = load_qa(dataset_name)
 idx_split = qa_dataset.get_idx_split()
 
 # Load the semi-structured knowledge base
-skb = load_skb(dataset_name, download_processed=True)
+skb = load_skb(dataset_name, download_processed=True, root=None)
 ```
+The root argument for load_skb specifies the location to store SKB data. With default value `None`, the data will be stored in [huggingface cache](https://huggingface.co/docs/datasets/en/cache).
+
 
 ### Data of the Retrieval Task
 
