@@ -27,20 +27,16 @@ class STaRKDataset:
         """
         self.name = name
         self.root = root
-        self.dataset_root = osp.join(self.root, name)
+        self.dataset_root = osp.join(self.root, name) if self.root is not None else None
+        self._download()
         self.split_dir = osp.join(self.dataset_root, 'split')
         self.query_dir = osp.join(self.dataset_root, 'stark_qa')
         self.human_generated_eval = human_generated_eval
-
-        if not osp.exists(self.query_dir):
-            print(f"Downloading {name} STaRK dataset")
-            self._download()
 
         self.qa_csv_path = osp.join(
             self.query_dir, 
             'stark_qa_human_generated_eval.csv' if human_generated_eval else 'stark_qa.csv'
         )
-        print('Loading QA dataset from', self.qa_csv_path)
         
         self.data = pd.read_csv(self.qa_csv_path)
         self.indices = sorted(self.data['id'].tolist())
@@ -76,13 +72,12 @@ class STaRKDataset:
         """
         Download the dataset from the Hugging Face repository.
         """
-        download_hf_folder(
-            STARK_QA_DATASET["repo"], 
+        self.dataset_root = download_hf_folder(
+            STARK_QA_DATASET["repo"],
             osp.join(STARK_QA_DATASET["folder"], self.name),
-            repo_type='dataset', 
-            save_as_folder=self.dataset_root
+            repo_type="dataset",
+            save_as_folder=self.dataset_root,
         )
-        print(f"Downloaded {self.name} STaRK dataset to {self.dataset_root}")
 
     def get_idx_split(self, test_ratio: float = 1.0) -> dict:
         """

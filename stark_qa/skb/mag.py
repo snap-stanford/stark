@@ -59,13 +59,27 @@ class MagSKB(SKB):
             download_processed (bool): Whether to download the processed data.
         """
         self.root = root
+
+        if download_processed:
+            if (self.root is None) or (self.root is not None and not osp.exists(osp.join(self.root, 'processed', 'node_info.pkl'))):
+                processed_path = hf_hub_download(
+                    DATASET["repo"], DATASET["processed"], repo_type="dataset"
+                )
+                if self.root is None:
+                    self.root = osp.dirname(processed_path)
+                if not osp.exists(osp.join(self.root, 'processed', 'node_info.pkl')):
+                    with zipfile.ZipFile(processed_path, "r") as zip_ref:
+                        zip_ref.extractall(self.root)
+                    print(f"Extracting downloaded processed data to {self.root}")
+
+
         self.raw_data_dir = osp.join(self.root, 'raw')
         self.processed_data_dir = osp.join(self.root, 'processed')
         self.graph_data_root = osp.join(self.raw_data_dir, 'ogbn_mag')
         self.text_root = osp.join(self.raw_data_dir, 'ogbn_papers100M')
 
         # existing dirs/files
-        self.schema_dir = osp.join(root, 'schema')
+        self.schema_dir = osp.join(self.root, 'schema')
         if not osp.exists(self.schema_dir):
             download_hf_folder(
                 DATASET["repo"], DATASET["metadata"],
@@ -84,20 +98,9 @@ class MagSKB(SKB):
         os.makedirs(self.mag_metadata_cache_dir, exist_ok=True)
         os.makedirs(self.paper100M_text_cache_dir, exist_ok=True)
 
-        if not osp.exists(osp.join(self.processed_data_dir, 'node_info.pkl')) and download_processed:
-            print('Downloading processed data...')
-            processed_path = hf_hub_download(
-                DATASET["repo"],
-                DATASET["processed"],
-                repo_type="dataset"
-            )
-            with zipfile.ZipFile(processed_path, 'r') as zip_ref:
-                zip_ref.extractall(self.root)
-            os.remove(processed_path)
-            print('Downloaded processed data!')
 
         if osp.exists(osp.join(self.processed_data_dir, 'node_info.pkl')):
-            print(f'Loaded processed data from {self.processed_data_dir}!')
+            print(f'Loading from {self.processed_data_dir}!')
             processed_data = load_files(self.processed_data_dir)
         else:
             print('Start processing raw data...')

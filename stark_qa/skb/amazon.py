@@ -98,30 +98,62 @@ class AmazonSKB(SKB):
         """
         self.root = root
         self.max_entries = max_entries
-        self.raw_data_dir = osp.join(root, 'raw')
-        self.processed_data_dir = osp.join(root, 'processed')
+
+        if download_processed:
+            if (self.root is None) or (
+                self.root is not None
+                and not osp.exists(osp.join(self.root, "category_list.json"))
+            ):
+                sub_category_path = osp.join(self.root, "category_list.json") if self.root is not None else None
+                self.sub_category_path = download_hf_file(
+                    DATASET["repo"],
+                    DATASET["metadata"],
+                    repo_type="dataset",
+                    save_as_file=sub_category_path,
+                )
+        
+            if (self.root is None) or (
+                self.root is not None
+                and meta_link_types is not None
+                and not osp.exists(
+                    osp.join(
+                        self.root,
+                        "processed",
+                        "cache",
+                        "-".join(meta_link_types),
+                        "node_info.pkl",
+                    )
+                )
+            ):
+                processed_path = hf_hub_download(
+                    DATASET["repo"], DATASET["processed"], repo_type="dataset"
+                )
+                if self.root is None:
+                    self.root = osp.dirname(processed_path)
+                if not osp.exists(
+                    osp.join(
+                        self.root,
+                        "processed",
+                        "cache",
+                        "-".join(meta_link_types),
+                        "node_info.pkl",
+                    )):
+                    with zipfile.ZipFile(processed_path, "r") as zip_ref:
+                        zip_ref.extractall(path=self.root)
+                    print(f"Extracting downloaded processed data to {self.root}")
+                    
+
+        self.raw_data_dir = osp.join(self.root, "raw")
+        self.processed_data_dir = osp.join(osp.join(self.root, "processed"))
         os.makedirs(self.raw_data_dir, exist_ok=True)
         os.makedirs(self.processed_data_dir, exist_ok=True)
 
-        self.sub_category_path = osp.join(root, 'category_list.json')
-        if not osp.exists(self.sub_category_path):
-            download_hf_file(
-                DATASET["repo"], DATASET["metadata"], 
-                repo_type="dataset", save_as_file=self.sub_category_path
-            )
-
         cache_path = None if meta_link_types is None else osp.join(self.processed_data_dir, 'cache', '-'.join(meta_link_types))
         
-        if not osp.exists(osp.join(cache_path, 'node_info.pkl')) and download_processed:
-            print('Downloading processed data...')
-            processed_path = hf_hub_download(DATASET["repo"], DATASET["processed"], repo_type="dataset")
-            with zipfile.ZipFile(processed_path, 'r') as zip_ref:
-                zip_ref.extractall(self.root)
-            os.remove(processed_path)
-            print('Downloaded processed data!')
 
-        if not (cache_path is None) and osp.exists(cache_path):
-            print(f'Load cached graph with meta link types {meta_link_types}')
+        if cache_path is not None and osp.exists(cache_path):
+            print(f"Loading from {self.processed_data_dir}!")
+            print(f'Loading cached graph with meta link types {meta_link_types}')
             processed_data = load_files(cache_path)
         else:
             print('Start processing raw data...')

@@ -49,23 +49,26 @@ class PrimeSKB(SKB):
             download_processed (bool): Whether to download the processed data.
         """
         self.root = root
-        self.raw_data_dir = osp.join(root, 'raw')
-        self.processed_data_dir = osp.join(root, 'processed')
 
-        self.kg_path = osp.join(self.raw_data_dir, 'kg.csv')
-        self.meta_path = osp.join(self.raw_data_dir, 'primekg_metadata_extended.pkl')
+        if download_processed:
+            if (self.root is None) or (self.root is not None and not osp.exists(osp.join(root, "processed", 'node_info.pkl'))):
+                processed_path = hf_hub_download(DATASET["repo"], DATASET["processed"], repo_type="dataset")
+                if self.root is None:
+                    self.root = osp.dirname(processed_path)
+                if not osp.exists(osp.join(self.root, "processed", 'node_info.pkl')):
+                    with zipfile.ZipFile(processed_path, 'r') as zip_ref:
+                        zip_ref.extractall(self.root)
+                    print(f"Extracting downloaded processed data to {self.root}")
+        
+        self.raw_data_dir = osp.join(self.root, "raw")
+        self.processed_data_dir = osp.join(osp.join(self.root, "processed"))
 
-        if not osp.exists(osp.join(self.processed_data_dir, 'node_info.pkl')) and download_processed:
-            print('Downloading processed data...')
-            processed_path = hf_hub_download(DATASET["repo"], DATASET["processed"], repo_type="dataset")
-            with zipfile.ZipFile(processed_path, 'r') as zip_ref:
-                zip_ref.extractall(self.root)
-            os.remove(processed_path)
-            print('Downloaded processed data!')
+        self.kg_path = osp.join(self.raw_data_dir, "kg.csv")
+        self.meta_path = osp.join(self.raw_data_dir, "primekg_metadata_extended.pkl")
 
         if osp.exists(osp.join(self.processed_data_dir, 'node_info.pkl')):
             processed_data = load_files(self.processed_data_dir)
-            print(f'Loaded from {self.processed_data_dir}!')
+            print(f'Loading from {self.processed_data_dir}!')
         else:
             processed_data = self._process_raw()
         super(PrimeSKB, self).__init__(**processed_data, **kwargs)
@@ -235,6 +238,7 @@ class PrimeSKB(SKB):
         for k, trip in cnt_dict.items():
             cnt_dict[k] = (trip[0], trip[1], trip[1] * 1.0 / trip[0])
         with open(osp.join(self.root, 'stats.json'), 'w') as df:
+            print('Saving stats to', osp.join(self.root, 'stats.json'))
             json.dump(cnt_dict, df, indent=4)
         
         files = {
