@@ -5,15 +5,15 @@
 
 <div align="left">
 
-[![](https://img.shields.io/badge/paper-pink?style=plastic&logo=GitBook)](https://arxiv.org/abs/2404.13207)
-[![](https://img.shields.io/badge/-github-green?style=plastic&logo=github)](https://github.com/snap-stanford/stark) 
+
+[![](https://img.shields.io/badge/Arxiv-paper-red?style=plastic&logo=arxiv)](https://arxiv.org/abs/2404.13207)
+[![](https://img.shields.io/badge/pip-stark--qa-brightgreen?style=plastic&logo=Python)](https://pypi.org/project/stark-qa/) 
+[![](https://img.shields.io/badge/doc-online-blue?style=plastic&logo=Read%20the%20Docs)](https://stark.stanford.edu/docs/index.html)
+[![](https://img.shields.io/badge/SKB_Explorer-online-orange?style=plastic&logo=Hugging%20face)](https://stark.stanford.edu/skb_explorer.html)
 [![](https://img.shields.io/badge/-Linkedin-blue?style=plastic&logo=Linkedin)](https://www.linkedin.com/posts/leskovec_reduce-llm-hallucinations-with-rag-over-textual-activity-7190745116339302401-da4n?utm_source=share&utm_medium=member_desktop) 
-[![](https://img.shields.io/badge/-Twitter-cyan?style=plastic&logo=Twitter)](https://twitter.com/ShirleyYXWu/status/1784970920383402433) 
+[![](https://img.shields.io/badge/-Twitter-cyan?style=plastic&logo=X)](https://twitter.com/ShirleyYXWu/status/1784970920383402433) 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 </div>
-
-
-**Interactive interface:** [STaRK SKB Explorer](https://stark.stanford.edu/skb_explorer.html)
 
 ## NEWS
 - **[Jun 2024]** We make our benchmark as a pip package [stark-qa](https://pypi.org/project/stark-qa/). You can directly load the data from the package now!
