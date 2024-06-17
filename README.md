@@ -90,7 +90,7 @@ idx_split = qa_dataset.get_idx_split()
 # Load the semi-structured knowledge base
 skb = load_skb(dataset_name, download_processed=True, root=None)
 ```
-The root argument for load_skb specifies the location to store SKB data. With default value `None`, the data will be stored in [huggingface cache](https://huggingface.co/docs/datasets/en/cache).
+The root argument for load_skb specifies the location to store SKB data. With default value `None`, the data will be stored in [Hugging Face cache](https://huggingface.co/docs/datasets/en/cache).
 
 
 ### Data of the Retrieval Task
