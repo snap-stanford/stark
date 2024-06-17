@@ -8,6 +8,7 @@ import json
 import pandas as pd
 from huggingface_hub import hf_hub_download
 from tdc.resource import PrimeKG
+from typing import Union
 
 from stark_qa.skb.knowledge_base import SKB
 from stark_qa.tools.process_text import compact_text, clean_dict
@@ -38,14 +39,14 @@ class PrimeSKB(SKB):
     candidate_types = NODE_TYPES
     
     def __init__(self, 
-                 root: str,
+                 root: Union[str, None] = None, 
                  download_processed: bool = True,
                  **kwargs):
         """
         Initialize the PrimeSKB class.
 
         Args:
-            root (str): Root directory to store the dataset folder.
+            root (Union[str, None]): Root directory to store the dataset. If None, default HF cache paths will be used.
             download_processed (bool): Whether to download the processed data.
         """
         self.root = root
@@ -332,17 +333,20 @@ class PrimeSKB(SKB):
 
         return doc
 
-    def get_rel_info(self, idx, rel_types=None, n_rel=-1):
+    def get_rel_info(self, 
+                     idx: int,
+                     rel_types: Union[list, None] = None,
+                     n_rel: int = -1) -> str:
         """
-        Get relationship information for the specified node.
+        Get relation information for the specified node.
 
         Args:
             idx (int): Index of the node.
-            rel_types (list): List of relationship types.
-            n_rel (int): Number of relationships.
+            rel_types (Union[list, None]): List of relation types or None if all relation types are included.
+            n_rel (int): Number of relations. Default is -1 if all relations are included.
 
         Returns:
-            str: Relationship information.
+            doc (str): Relation information.
         """
         doc = ''
         rel_types = self.rel_type_lst() if rel_types is None else rel_types
@@ -365,5 +369,5 @@ class PrimeSKB(SKB):
                 doc += neighbors
             doc += '}'
         if len(doc): 
-            doc = '- relations:\n' + doc
+            doc = '- relations:' + doc
         return doc

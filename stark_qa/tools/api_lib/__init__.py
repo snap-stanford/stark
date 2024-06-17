@@ -9,6 +9,7 @@ cur_dir = osp.dirname(os.path.realpath(__file__))
 outer_dir = osp.join(cur_dir, "..", "..", "..")
 
 # Setup Anthropic API key
+anthropic_client = None
 try:
     import anthropic
     
@@ -20,7 +21,13 @@ try:
     # Initialize the Anthropic client with the API key
     anthropic_client = anthropic.Anthropic(api_key=api_key)
 except Exception as e:
-    warnings.warn(f"Could not load Anthropic API key from {api_key_path}. Exception: {e}")
+    try: 
+        assert os.environ.get("ANTHROPIC_API_KEY") is not None
+        anthropic_client  = anthropic.Anthropic(
+            api_key=os.environ.get("ANTHROPIC_API_KEY")
+        )
+    except Exception as e:
+        warnings.warn(f"Could not load Anthropic API key from {api_key_path} or environment variable ANTHROPIC_API_KEY.")
 
 # Setup OpenAI API key
 try:
@@ -38,4 +45,9 @@ try:
     # Set the OpenAI API key in the environment variables
     os.environ["OPENAI_API_KEY"] = openai_key
 except Exception as e:
-    warnings.warn(f"Could not load OpenAI API key from {api_key_path}. Exception: {e}")
+    try:
+        assert os.environ.get("OPENAI_API_KEY") is not None
+        openai.api_key = os.environ.get("OPENAI_API_KEY")
+        openai.organization = os.environ.get("OPENAI_ORG")
+    except Exception as e:
+        warnings.warn(f"Could not load OpenAI API key from {api_key_path} or environment variable OPENAI_API_KEY. ")

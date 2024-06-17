@@ -11,6 +11,7 @@ from langdetect import detect
 from ogb.nodeproppred import NodePropPredDataset
 from ogb.utils.url import download_url, extract_zip
 from tqdm import tqdm
+from typing import Union
 
 from stark_qa.skb.knowledge_base import SKB
 from stark_qa.tools.download_hf import download_hf_file, download_hf_folder
@@ -50,12 +51,15 @@ class MagSKB(SKB):
         'field_of_study': ['name']
     }
     
-    def __init__(self, root, download_processed=True, **kwargs):
+    def __init__(self, 
+                 root: Union[str, None] = None, 
+                 download_processed: bool = True,
+                 **kwargs):
         """
         Initialize the MagSKB class.
 
         Args:
-            root (str): Root directory to store the dataset folder.
+            root (Union[str, None]): Root directory to store the dataset. If None, default HF cache paths will be used.
             download_processed (bool): Whether to download the processed data.
         """
         self.root = root
@@ -111,7 +115,7 @@ class MagSKB(SKB):
         })
         super(MagSKB, self).__init__(**processed_data, **kwargs)
 
-    def load_edge(self, edge_type):
+    def load_edge(self, edge_type: str) -> tuple:
         """
         Load edge data for the specified edge type.
 
@@ -230,7 +234,9 @@ class MagSKB(SKB):
         paper_data.rename(columns={'id': 'id', 'PaperId': 'mag_id'}, inplace=True)
         return author_data, field_of_study_data, institution_data, paper_data
 
-    def load_english_paper_text(self, mag_ids, download_cache=True):
+    def load_english_paper_text(self, 
+                                mag_ids: list,
+                                download_cache: bool = True) -> pd.DataFrame:
         """
         Load English text data for the papers.
 
@@ -303,15 +309,19 @@ class MagSKB(SKB):
             id2mag[idx] = df['mag_id'][idx]
         return mag2id, id2mag
     
-    def get_doc_info(self, idx, compact=False, add_rel=True, n_rel=-1) -> str:
+    def get_doc_info(self, 
+                     idx : int,
+                     compact: bool = False,
+                     add_rel: bool = True,
+                     n_rel: int = -1) -> str:
         """
         Get document information for the specified node.
 
         Args:
             idx (int): Index of the node.
             compact (bool): Whether to compact the text.
-            add_rel (bool): Whether to add relationship information.
-            n_rel (int): Number of relationships to add.
+            add_rel (bool): Whether to add relation information.
+            n_rel (int): Number of relations to add. Default is -1 if all relations are included.
 
         Returns:
             str: Document information.
@@ -362,17 +372,20 @@ class MagSKB(SKB):
             doc = compact_text(doc)
         return doc
 
-    def get_rel_info(self, idx, rel_types=None, n_rel=-1):
+    def get_rel_info(self, 
+                     idx: int,
+                     rel_types: Union[list, None] = None,
+                     n_rel: int = -1) -> str:
         """
-        Get relationship information for the specified node.
+        Get relation information for the specified node.
 
         Args:
             idx (int): Index of the node.
-            rel_types (list): List of relationship types.
-            n_rel (int): Number of relationships.
+            rel_types (Union[list, None]): List of relation types or None if all relation types are included.
+            n_rel (int): Number of relations. Default is -1 if all relations are included.
 
         Returns:
-            doc (str): Relationship information.
+            doc (str): Relation information.
         """
         doc = ''
         rel_types = self.rel_type_lst() if rel_types is None else rel_types

@@ -2,6 +2,7 @@ import copy
 import os.path as osp
 
 import pandas as pd
+from typing import Union
 import torch
 
 from stark_qa.tools.download_hf import download_hf_folder
@@ -15,14 +16,14 @@ STARK_QA_DATASET = {
 class STaRKDataset:
     def __init__(self, 
                  name: str, 
-                 root: str, 
+                 root: Union[str, None] = None, 
                  human_generated_eval: bool = False):
         """
         Initialize the STaRK dataset.
 
         Args:
             name (str): Name of the dataset.
-            root (str): Root directory to store the dataset.
+            root (Union[str, None]): Root directory to store the dataset. If None, default HF cache paths will be used.
             human_generated_eval (bool): Whether to use human-generated evaluation data.
         """
         self.name = name

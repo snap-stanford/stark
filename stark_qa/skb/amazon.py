@@ -12,6 +12,7 @@ import torch
 from huggingface_hub import hf_hub_download
 from ogb.utils.url import download_url
 from tqdm import tqdm
+from typing import Union
 
 from stark_qa.skb.knowledge_base import SKB
 from stark_qa.tools.download_hf import download_hf_file
@@ -80,8 +81,8 @@ class AmazonSKB(SKB):
     }
 
     def __init__(self, 
-                 root: str, 
-                 categories: list, 
+                 root: Union[str, None] = None, 
+                 categories: list = ['Sports_and_Outdoors'], 
                  meta_link_types: list = ['brand', 'category', 'color'],
                  max_entries: int = 25, 
                  download_processed: bool = True, 
@@ -90,7 +91,7 @@ class AmazonSKB(SKB):
         Initialize the AmazonSKB class.
 
         Args:
-            root (str): Root directory to store the data.
+            root (Union[str, None]): Root directory to store the dataset. If None, default HF cache paths will be used.
             categories (list): Product categories.
             meta_link_types (list): A list of entries in node info that are used to construct meta links.
             max_entries (int): Maximum number of review & QA entries to show in the description.
@@ -180,7 +181,8 @@ class AmazonSKB(SKB):
         register_node(node, node_info)
         return node
         
-    def get_chunk_info(self, idx: int, attribute: str) -> str:
+    def get_chunk_info(self, idx: int, 
+                       attribute: str) -> str:
         """
         Get chunk information for the specified attribute.
 
@@ -225,7 +227,9 @@ class AmazonSKB(SKB):
             chunk = node_attr
         return chunk 
     
-    def get_doc_info(self, idx: int, add_rel: bool = True, compact: bool = False) -> str:
+    def get_doc_info(self, idx: int, 
+                     add_rel: bool = True, 
+                     compact: bool = False) -> str:
         """
         Get document information for the specified node.
 
@@ -295,17 +299,20 @@ class AmazonSKB(SKB):
             doc = compact_text(doc)
         return doc
     
-    def get_rel_info(self, idx: int, rel_types: list = None, n_rel: int = -1) -> str:
+    def get_rel_info(self, 
+                     idx: int, 
+                     rel_types: Union[list, None] = None,
+                     n_rel: int = -1) -> str:
         """
-        Get relationship information for the specified node.
+        Get relation information for the specified node.
 
         Args:
             idx (int): Index of the node.
-            rel_types (list): List of relationship types.
-            n_rel (int): Number of relationships.
+            rel_types (Union[list, None]): List of relation types or None if all relation types are included.
+            n_rel (int): Number of relations. Default is -1 if all relations are included.
 
         Returns:
-            str: Relationship information.
+            doc (str): Relation information.
         """
         doc = ''
         rel_types = self.rel_type_lst() if rel_types is None else rel_types
@@ -315,6 +322,9 @@ class AmazonSKB(SKB):
 
         str_also_buy = [f"#{idx + 1}: " + self[i].title + '\n' for idx, i in enumerate(n_also_buy)]
         str_also_view = [f"#{idx + 1}: " + self[i].title + '\n' for idx, i in enumerate(n_also_view)]
+        if n_rel > 0:
+            str_also_buy = str_also_buy[:n_rel]
+            str_also_view = str_also_view[:n_rel]
         
         if not str_also_buy:
             str_also_buy = ''
