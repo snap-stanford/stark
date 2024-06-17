@@ -1,10 +1,6 @@
 
-<h1 align="left">
-    STaRK: Benchmarking LLM Retrieval on Textual and Relational Knowledge Bases
-</h1>
-
 <div align="left">
-
+<figure class="center-figure"> <img src="media/logo.png" width="95%"></figure>
 
 [![](https://img.shields.io/badge/website-STaRK-purple?style=plastic&logo=Google%20chrome)](https://stark.stanford.edu/)
 [![](https://img.shields.io/badge/Arxiv-paper-red?style=plastic&logo=arxiv)](https://arxiv.org/abs/2404.13207)
@@ -16,19 +12,28 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 </div>
 
+<h1 align="left">
+    STaRK: Benchmarking LLM Retrieval on Textual and Relational Knowledge Bases
+</h1>
+
+
 ## NEWS
 - **[Jun 2024]** We make our benchmark as a pip package [stark-qa](https://pypi.org/project/stark-qa/). You can directly load the data from the package now!
 - **[Jun 2024]** We migrate our data to [Hugging Face](https://huggingface.co/datasets/snap-stanford/stark)! You don't need to change anything, the data will be automatically downloaded.
-- **[May 2024]** 🔥 We have augmented our benchmark with three high-quality human-generated query datasets which are open to access. See more details in our [updated arxiv](https://arxiv.org/abs/2404.13207)! 
+- **[May 2024]** We have augmented our benchmark with three high-quality human-generated query datasets which are open to access. See more details in our [updated arxiv](https://arxiv.org/abs/2404.13207)! 
 - **[May 9th 2024]** We release [STaRK SKB Explorer](https://stark.stanford.edu/skb_explorer.html), an interactive interface for you to explore our knowledge bases!
 - **[May 7th 2024]** We present STaRK in the [2024 Stanford Annual Affiliates Meeting](https://forum.stanford.edu/events/2024-annual-affiliates-meeting/day-3-ai-health-and-data-science-applications-workshop) and [2024 Stanford Data Science Conference](https://datascience.stanford.edu/2024-stanford-data-science-conference).
 - **[May 5th 2024]** STaRK was reported on [Marketpost](https://www.marktechpost.com/2024/05/01/researchers-from-stanford-and-amazon-developed-stark-a-large-scale-semi-structure-retrieval-ai-benchmark-on-textual-and-relational-knowledge-bases/) and [智源社区 BAAI](https://hub.baai.ac.cn/paper/6841fd6f-1eca-41c4-a432-5f2d845ac167). Thanks for writing about our work!
 - **[Apr 21st 2024]** We release the STaRK benchmark.
 
 ## What is STaRK?
-STaRK is a large-scale semi-structure retrieval benchmark on Textual and Relational Knowledge Bases. Given a user query, the task is to extract nodes from the knowledge base that are relevant to the query. 
+STaRK is a large-scale Semi-structured Retrieval Benchmark on Textual and Relational Knowledge bases, covering applications in product search, academic paper search, and biomedicine inquiries.
+
+Featuring diverse, natural-sounding, and practical queries that require context-specific reasoning, STaRK sets a new standard for assessing real-world retrieval systems driven by LLMs and presents significant challenges for future research.
 
 
+🔥 Check out our [website](https://stark.stanford.edu/) for more overview!
+<!-- 
 <figure class="center-figure">
     <img src="media/overview.jpg" width="90%">
 </figure>
@@ -46,7 +51,7 @@ requirements in queries.
 
 - **Natural-sounding and Practical Queries**: The queries in our benchmark are crafted to incorporate rich relational information and complex textual properties, and closely mirror questions in real-life scenarios, e.g., with flexible query formats and possibly with extra contexts.
 
-    <figure class="center-figure"> <img src="media/questions.jpg" width="95%"></figure> 
+    <figure class="center-figure"> <img src="media/questions.jpg" width="95%"></figure>  -->
 
 
 # Access benchmark data
@@ -62,7 +67,7 @@ pip install stark-qa
 ### From source
 Create a conda env with python >=3.8 and <3.12 and install required packages in `requirements.txt`.
 ```bash
-conda create -n stark python=3.8 
+conda create -n stark python=3.11
 conda activate stark
 pip install -r requirements.txt
 ```
