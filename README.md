@@ -1,6 +1,6 @@
 
-<div align="left">
-<figure class="center-figure"> <img src="media/logo.png" width="90%"></figure>
+<div align="center">
+<figure class="center-figure"> <img src="media/logo.png" width="85%"></figure>
 
 <h1 align="left">
     STaRK: Benchmarking LLM Retrieval on Textual and Relational Knowledge Bases
