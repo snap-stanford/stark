@@ -1,10 +1,13 @@
 
 <div align="center">
 <figure class="center-figure"> <img src="media/logo.png" width="85%"></figure>
+</div>
 
 <h1 align="left">
     STaRK: Benchmarking LLM Retrieval on Textual and Relational Knowledge Bases
 </h1>
+
+<div align="left">
 
 [![](https://img.shields.io/badge/website-STaRK-purple?style=plastic&logo=Google%20chrome)](https://stark.stanford.edu/)
 [![](https://img.shields.io/badge/Arxiv-paper-red?style=plastic&logo=arxiv)](https://arxiv.org/abs/2404.13207)
