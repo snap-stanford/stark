@@ -1,6 +1,10 @@
 
 <div align="left">
-<figure class="center-figure"> <img src="media/logo.png" width="95%"></figure>
+<figure class="center-figure"> <img src="media/logo.png" width="90%"></figure>
+
+<h1 align="left">
+    STaRK: Benchmarking LLM Retrieval on Textual and Relational Knowledge Bases
+</h1>
 
 [![](https://img.shields.io/badge/website-STaRK-purple?style=plastic&logo=Google%20chrome)](https://stark.stanford.edu/)
 [![](https://img.shields.io/badge/Arxiv-paper-red?style=plastic&logo=arxiv)](https://arxiv.org/abs/2404.13207)
@@ -12,9 +16,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 </div>
 
-<h1 align="left">
-    STaRK: Benchmarking LLM Retrieval on Textual and Relational Knowledge Bases
-</h1>
 
 
 ## NEWS
