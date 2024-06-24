@@ -142,7 +142,7 @@ There are two ways to load the knowledge base data:
             OPENAI_API_KEY=YOUR_API_KEY
             OPENAI_ORG=YOUR_ORGANIZATION
             ```
-        or locally at `config/openai_api_key.txt` or `config/claude_api_key.txt` 
+        or (deprecated) locally at `config/openai_api_key.txt` or `config/claude_api_key.txt` 
     - `emb_dir`: the directory to store embeddings.
     - `split`: the split to evaluate on, one of `train`, `val`, `test`, and `human_generated_eval` (to be evaluated on the human generated query dataset).
     - `output_dir`: the directory to store evaluation outputs.
