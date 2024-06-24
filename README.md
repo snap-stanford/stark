@@ -124,7 +124,7 @@ There are two ways to load the knowledge base data:
     ```bash
     python eval.py --dataset amazon --model VSS --emb_dir emb/ --output_dir output/ --emb_model text-embedding-ada-002 --split test --save_pred 
     ```
-
+    
     ```bash
     python eval.py --dataset amazon --model LLMReranker --emb_dir emb/ --output_dir output/  --emb_model text-embedding-ada-002 --split test --llm_model gpt-4-1106-preview --save_pred
     ```
@@ -132,7 +132,17 @@ There are two ways to load the knowledge base data:
     - `dataset`: the dataset to evaluate on, one of  `amazon`, `mag` or `prime`.
     - `model`: the model to be evaluated, one of `VSS`, `MultiVSS`, `LLMReranker`. 
         - Please specify the name of embedding model with argument `--emb_model`.
-        - If you are using `LLMReranker`, please specify API keys at `config/openai_api_key.txt` or `config/claude_api_key.txt` and the LLM name with argument `--llm_model`.
+        - If you are using `LLMReranker`, please specify the LLM name with argument `--llm_model`.
+        - Specify API keys in command line
+            ```
+            ANTHROPIC_API_KEY=YOUR_API_KEY
+            ```
+            or
+            ```
+            OPENAI_API_KEY=YOUR_API_KEY
+            OPENAI_ORG=YOUR_ORGANIZATION
+            ```
+        or locally at `config/openai_api_key.txt` or `config/claude_api_key.txt` 
     - `emb_dir`: the directory to store embeddings.
     - `split`: the split to evaluate on, one of `train`, `val`, `test`, and `human_generated_eval` (to be evaluated on the human generated query dataset).
     - `output_dir`: the directory to store evaluation outputs.
