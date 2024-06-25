@@ -135,12 +135,12 @@ There are two ways to load the knowledge base data:
         - If you are using `LLMReranker`, please specify the LLM name with argument `--llm_model`.
         - Specify API keys in command line
             ```
-            ANTHROPIC_API_KEY=YOUR_API_KEY
+            export ANTHROPIC_API_KEY=YOUR_API_KEY
             ```
             or
             ```
-            OPENAI_API_KEY=YOUR_API_KEY
-            OPENAI_ORG=YOUR_ORGANIZATION
+            export OPENAI_API_KEY=YOUR_API_KEY
+            export OPENAI_ORG=YOUR_ORGANIZATION
             ```
         or (deprecated) locally at `config/openai_api_key.txt` or `config/claude_api_key.txt` 
     - `emb_dir`: the directory to store embeddings.
