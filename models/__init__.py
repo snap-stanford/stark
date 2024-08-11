@@ -9,7 +9,8 @@ def get_model(args, kb):
             kb,
             emb_model=args.emb_model,
             query_emb_dir=args.query_emb_dir, 
-            candidates_emb_dir=args.node_emb_dir
+            candidates_emb_dir=args.node_emb_dir,
+            device=args.device
         )
     if model_name == 'MultiVSS':
         return MultiVSS(

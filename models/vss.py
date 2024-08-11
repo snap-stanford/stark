@@ -1,9 +1,9 @@
 import os.path as osp
 import torch
-from typing import Any
+from typing import Any, Union, List, Dict
 from models.model import ModelForSTaRKQA
 from tqdm import tqdm
-
+from stark_qa.evaluator import Evaluator
 
 class VSS(ModelForSTaRKQA):
     
@@ -11,7 +11,9 @@ class VSS(ModelForSTaRKQA):
                  skb, 
                  query_emb_dir: str, 
                  candidates_emb_dir: str, 
-                 emb_model: str = 'text-embedding-ada-002'):
+                 emb_model: str = 'text-embedding-ada-002',
+                 device: str = 'cpu',
+                 pin_gpu: bool = True):
         """
         Vector Similarity Search
 
@@ -25,6 +27,8 @@ class VSS(ModelForSTaRKQA):
         self.emb_model = emb_model
         self.query_emb_dir = query_emb_dir
         self.candidates_emb_dir = candidates_emb_dir
+        self.device = device
+        self.evaluator = Evaluator(self.candidate_ids, device)
 
         candidate_emb_path = osp.join(candidates_emb_dir, 'candidate_emb_dict.pt')
         if osp.exists(candidate_emb_path):
@@ -40,11 +44,11 @@ class VSS(ModelForSTaRKQA):
 
         assert len(candidate_emb_dict) == len(self.candidate_ids)
         candidate_embs = [candidate_emb_dict[idx] for idx in self.candidate_ids]
-        self.candidate_embs = torch.cat(candidate_embs, dim=0)
-
+        self.candidate_embs = torch.cat(candidate_embs, dim=0).to(device) if pin_gpu else torch.cat(candidate_embs, dim=0)
+    
     def forward(self, 
-                query: str, 
-                query_id: int, 
+                query: Union[str, List[str]], 
+                query_id: Union[int, List[int]], 
                 **kwargs: Any) -> dict:
         """
         Forward pass to compute similarity scores for the given query.
@@ -57,6 +61,8 @@ class VSS(ModelForSTaRKQA):
             pred_dict (dict): A dictionary of candidate ids and their corresponding similarity scores.
         """
         query_emb = self.get_query_emb(query, query_id, emb_model=self.emb_model)
-        similarity = torch.matmul(query_emb.cuda(), self.candidate_embs.cuda().T).cpu().view(-1)
-        pred_dict = {self.candidate_ids[i]: similarity[i] for i in range(len(self.candidate_ids))}
-        return pred_dict
+        similarity = torch.matmul(query_emb.to(self.device), self.candidate_embs.T).cpu()
+        if isinstance(query, str):
+            return dict(zip(self.candidate_ids, similarity.view(-1)))
+        else:
+            return torch.LongTensor(self.candidate_ids), similarity.t()
