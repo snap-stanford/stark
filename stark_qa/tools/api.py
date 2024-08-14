@@ -34,6 +34,24 @@ registered_text_completion_llms = {
 }
 
 
+def get_api_embedding(model_name, *args, **kwargs):
+    if 'voyage' in model_name:
+        return get_voyage_embedding(*args, **kwargs)
+    elif 'text-embedding' in model_name:
+        return get_openai_embedding(*args, **kwargs)
+    else:
+        raise ValueError(f"Model {model_name} not recognized.")
+
+
+def get_api_embeddings(model_name, *args, **kwargs):
+    if 'voyage' in model_name:
+        return get_voyage_embeddings(*args, **kwargs)
+    elif 'text-embedding' in model_name:
+        return get_openai_embeddings(*args, **kwargs)
+    else:
+        raise ValueError(f"Model {model_name} not recognized.")
+
+
 def parallel_func(func, n_max_nodes=LLM_PARALLEL_NODES):
     """
     A general function to call a function on a list of inputs in parallel.
@@ -52,6 +70,7 @@ def parallel_func(func, n_max_nodes=LLM_PARALLEL_NODES):
             results = pool.map(partial_func, inputs)
         return results
     return _parallel_func
+
 
 def get_llm_output(message, 
                    model="gpt-4-0125-preview", 

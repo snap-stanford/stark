@@ -47,6 +47,9 @@ def parse_args():
     parser.add_argument("--save_pred", action="store_true")
     parser.add_argument("--save_topk", type=int, default=500, help="topk predicted indices to save")
 
+    # embeddings should/will be stored under f'doc{surfix}', e.g., _no_compact, _no_rel
+    parser.add_argument("--surfix", type=str, default='')
+
     return parser.parse_args()
 
 
@@ -59,11 +62,10 @@ if __name__ == "__main__":
     args = merge_args(args, default_args)
     
     query_emb_surfix = f'_{args.split}' if args.split == 'human_generated_eval' else ''
-    args.query_emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, f"query{query_emb_surfix}")
-    args.node_emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, "doc")
-    args.chunk_emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, "chunk")
-    surfix = args.llm_model if args.model == 'LLMReranker' else args.emb_model
-    output_dir = osp.join(args.output_dir, "eval", args.dataset, args.model, surfix)
+    args.query_emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, f"query{query_emb_surfix}{args.surfix}")
+    args.node_emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, f"doc{args.surfix}")
+    args.chunk_emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, f"chunk{args.surfix}")
+    output_dir = osp.join(args.output_dir, "eval", args.dataset, args.model, args.llm_model if args.model == 'LLMReranker' else args.emb_model)
 
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(args.query_emb_dir, exist_ok=True)
@@ -108,9 +110,9 @@ if __name__ == "__main__":
         existing_idx = eval_csv["idx"].tolist()
 
     all_indices = split_idx[args.split].tolist()
-    indices = set(all_indices) - set(existing_idx)
+    indices = list(set(all_indices) - set(existing_idx))
     
-    if args.batch_size > 0 and args.model=='VSS':
+    if args.batch_size > 0 and args.model == 'VSS':
         for batch_idx in tqdm(range(0, len(indices), args.batch_size or len(indices))):
             batch_indices = [idx for idx in indices[batch_idx : min(batch_idx + args.batch_size, len(indices))] if idx not in existing_idx]
             if len(batch_indices) == 0:

@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 sys.path.append('.')
 from stark_qa import load_skb, load_qa
-from stark_qa.tools.api import get_openai_embeddings, get_voyage_embeddings
+from stark_qa.tools.api import get_api_embeddings
 
 
 def parse_args():
@@ -55,6 +55,7 @@ if __name__ == '__main__':
     mode_surfix += '_no_compact' if not args.compact else ''
     emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, f'{args.mode}{mode_surfix}')
     csv_cache = osp.join(args.data_dir, args.dataset, f'{args.mode}{mode_surfix}.csv')
+
     print(f'Embedding directory: {emb_dir}')
     os.makedirs(emb_dir, exist_ok=True)
     os.makedirs(os.path.dirname(csv_cache), exist_ok=True)
@@ -68,50 +69,45 @@ if __name__ == '__main__':
         lst = [qa_dataset[i][1] for i in range(len(qa_dataset))]
         emb_path = osp.join(emb_dir, f'query_emb_dict.pt')
     random.shuffle(lst)
-            
+    
+    # Load existing embeddings if they exist
     if osp.exists(emb_path):
         emb_dict = torch.load(emb_path)
-        existing_indices = list(emb_dict.keys())
+        exist_emb_indices = list(emb_dict.keys())
         print(f'Loaded existing embeddings from {emb_path}. Size: {len(emb_dict)}')
     else:
         emb_dict = {}
-        existing_indices = []
+        exist_emb_indices = []
 
-    if osp.exists(csv_cache):
+    # Load existing document cache if it exists (only for doc mode)
+    if args.mode == 'doc' and osp.exists(csv_cache):
         df = pd.read_csv(csv_cache)
-        indices = df['index'].tolist()
-        texts = df['text'].tolist()
+        cache_dict = dict(zip(df['index'], df['text']))
+
+        # Ensure that the indices in the cache match the expected indices
+        assert set(cache_dict.keys()) == set(lst), 'Indices in cache do not match the candidate indices.'
+
+        indices = list(set(lst) - set(exist_emb_indices))
+        texts = [cache_dict[idx] for idx in tqdm(indices, desc="Filtering docs for new embeddings")]
     else:
-        texts, indices = [], []
-    existing_indices = set(existing_indices + indices)
-
-    for idx in tqdm(lst):
-        if idx in existing_indices:
-            continue
-        if args.mode == 'query':
-            text = qa_dataset.get_query_by_qid(idx)
-        elif args.mode == 'doc':
-            text = kb.get_doc_info(idx, add_rel=args.add_rel, compact=args.compact)
-        texts.append(text)
-        indices.append(idx)
-
-    # Create a DataFrame and save it to a CSV file
-    df = pd.DataFrame({'index': indices, 'text': texts})
-    df.to_csv(csv_cache, index=False)
+        indices = lst
+        texts = [qa_dataset.get_query_by_qid(idx) if args.mode == 'query'
+                 else kb.get_doc_info(idx, add_rel=args.add_rel, compact=args.compact) for idx in tqdm(indices, desc="Gathering docs")]
+        if args.mode == 'doc':
+            df = pd.DataFrame({'index': indices, 'text': texts})
+            df.to_csv(csv_cache, index=False)
 
     print(f'Generating embeddings for {len(texts)} texts...')
-    for i in tqdm(range(0, len(texts), args.batch_size)):
+    for i in tqdm(range(0, len(texts), args.batch_size), desc="Gnerating embeddings"):
         batch_texts = texts[i:i+args.batch_size]
-        if 'voyage' in args.emb_model:
-            get_emb_func = get_voyage_embeddings
-        else:
-            get_emb_func = get_openai_embeddings
             
-        batch_embs = get_emb_func(
+        batch_embs = get_api_embeddings(
+            args.emb_model,
             batch_texts, 
             model=args.emb_model, 
             n_max_nodes=args.n_max_nodes
         ).view(len(batch_texts), -1).cpu()
+        
         batch_indices = indices[i:i+args.batch_size]
         for idx, emb in zip(batch_indices, batch_embs):
             emb_dict[idx] = emb

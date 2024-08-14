@@ -118,7 +118,7 @@ There are two ways to load the knowledge base data:
     - `dataset`: one of `amazon`, `mag` or `prime`.
     - `mode`: the content to embed, one of `query` or `doc` (node documents).
     - `emb_dir`: the directory to store embeddings.
-    - `emb_model`: the LLM name to generate embeddings, such as `text-embedding-ada-002`, `text-embedding-3-large`.
+    - `emb_model`: the LLM name to generate embeddings, such as `text-embedding-ada-002`, `text-embedding-3-large`, , `voyage-large-2-instruct`.
     - See `emb_generate.py` for other arguments.
 
 - Run the python script for evaluation. E.g.,
@@ -143,7 +143,10 @@ There are two ways to load the knowledge base data:
             export OPENAI_API_KEY=YOUR_API_KEY
             export OPENAI_ORG=YOUR_ORGANIZATION
             ```
-        or (deprecated) locally at `config/openai_api_key.txt` or `config/claude_api_key.txt` 
+            or 
+            ```
+            export VOYAGE_API_KEY=YOUR_API_KEY
+            ```
     - `emb_dir`: the directory to store embeddings.
     - `split`: the split to evaluate on, one of `train`, `val`, `test`, and `human_generated_eval` (to be evaluated on the human generated query dataset).
     - `output_dir`: the directory to store evaluation outputs.
