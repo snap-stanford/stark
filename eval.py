@@ -27,6 +27,8 @@ def parse_args():
 
     # Evaluation settings
     parser.add_argument("--test_ratio", type=float, default=1.0)
+    parser.add_argument("--batch_size", type=int, default=256)
+    parser.add_argument("--device", type=str, default='cuda')
 
     # MultiVSS specific settings
     parser.add_argument("--chunk_size", type=int, default=None)
@@ -105,31 +107,49 @@ if __name__ == "__main__":
         eval_csv = pd.read_csv(eval_csv_path)
         existing_idx = eval_csv["idx"].tolist()
 
-    indices = split_idx[args.split].tolist()
-    remaining_indices = set(indices) - set(existing_idx)
-
-    for idx in tqdm(remaining_indices):
-        query, query_id, answer_ids, meta_info = qa_dataset[idx]
-        pred_dict = model.forward(query, query_id)
-
-        answer_ids = torch.LongTensor(answer_ids)
-        result = model.evaluate(pred_dict, answer_ids, metrics=eval_metrics)
-
-        result["idx"], result["query_id"] = idx, query_id
-        result["pred_rank"] = torch.LongTensor(list(pred_dict.keys()))[
-            torch.argsort(torch.tensor(list(pred_dict.values())), descending=True)[
-                :args.save_topk
-            ]
-        ].tolist()
-
-        eval_csv = pd.concat([eval_csv, pd.DataFrame([result])], ignore_index=True)
-
-        if args.save_pred:
-            eval_csv.to_csv(eval_csv_path, index=False)
-        for metric in eval_metrics:
-            print(
-                f"{metric}: {np.mean(eval_csv[eval_csv['idx'].isin(indices)][metric])}"
+    all_indices = split_idx[args.split].tolist()
+    indices = set(all_indices) - set(existing_idx)
+    
+    if args.batch_size > 0 and args.model=='VSS':
+        for batch_idx in tqdm(range(0, len(indices), args.batch_size or len(indices))):
+            batch_indices = [idx for idx in indices[batch_idx : min(batch_idx + args.batch_size, len(indices))] if idx not in existing_idx]
+            if len(batch_indices) == 0:
+                continue
+            queries, query_ids, answer_ids, meta_infos = zip(
+                *[qa_dataset[idx] for idx in batch_indices]
             )
+            pred_ids, pred = model.forward(queries, query_ids)
+            
+            answer_ids = [torch.LongTensor(answer_id) for answer_id in answer_ids]
+            results = model.evaluate_batch(pred_ids, pred, answer_ids, metrics=eval_metrics)
+
+            for i, result in enumerate(results):
+                result["idx"], result["query_id"] = batch_indices[i], query_ids[i]
+                result["pred_rank"] = pred_ids[torch.argsort(pred[:,i], descending=True)[:args.save_topk]].tolist()
+                eval_csv = pd.concat([eval_csv, pd.DataFrame([result])], ignore_index=True)
+    else:
+        for idx in tqdm(indices):
+            query, query_id, answer_ids, meta_info = qa_dataset[idx]
+            pred_dict = model.forward(query, query_id)
+
+            answer_ids = torch.LongTensor(answer_ids)
+            result = model.evaluate(pred_dict, answer_ids, metrics=eval_metrics)
+
+            result["idx"], result["query_id"] = idx, query_id
+            result["pred_rank"] = torch.LongTensor(list(pred_dict.keys()))[
+                torch.argsort(torch.tensor(list(pred_dict.values())), descending=True)[
+                    :args.save_topk
+                ]
+            ].tolist()
+
+            eval_csv = pd.concat([eval_csv, pd.DataFrame([result])], ignore_index=True)
+
+            if args.save_pred:
+                eval_csv.to_csv(eval_csv_path, index=False)
+            for metric in eval_metrics:
+                print(
+                    f"{metric}: {np.mean(eval_csv[eval_csv['idx'].isin(indices)][metric])}"
+                )
     if args.save_pred:
         eval_csv.to_csv(eval_csv_path, index=False)
     final_metrics = (

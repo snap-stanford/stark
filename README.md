@@ -10,10 +10,11 @@
 <div align="left">
 
 [![](https://img.shields.io/badge/website-STaRK-purple?style=plastic&logo=Google%20chrome)](https://stark.stanford.edu/)
+[![](https://img.shields.io/badge/Dataset-yellow?style=plastic&logo=Hugging%20face)](https://huggingface.co/datasets/snap-stanford/stark)
+[![](https://img.shields.io/badge/SKB_Explorer-online-yellow?style=plastic&logo=Hugging%20face)](https://stark.stanford.edu/skb_explorer.html)
 [![](https://img.shields.io/badge/Arxiv-paper-red?style=plastic&logo=arxiv)](https://arxiv.org/abs/2404.13207)
 [![](https://img.shields.io/badge/pip-stark--qa-brightgreen?style=plastic&logo=Python)](https://pypi.org/project/stark-qa/) 
 [![](https://img.shields.io/badge/doc-online-blue?style=plastic&logo=Read%20the%20Docs)](https://stark.stanford.edu/docs/index.html)
-[![](https://img.shields.io/badge/SKB_Explorer-online-yellow?style=plastic&logo=Hugging%20face)](https://stark.stanford.edu/skb_explorer.html)
 [![](https://img.shields.io/badge/-Linkedin-blue?style=plastic&logo=Linkedin)](https://www.linkedin.com/posts/leskovec_reduce-llm-hallucinations-with-rag-over-textual-activity-7190745116339302401-da4n?utm_source=share&utm_medium=member_desktop) 
 [![](https://img.shields.io/badge/-Twitter-cyan?style=plastic&logo=X)](https://twitter.com/ShirleyYXWu/status/1784970920383402433) 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -124,7 +125,7 @@ There are two ways to load the knowledge base data:
     ```bash
     python eval.py --dataset amazon --model VSS --emb_dir emb/ --output_dir output/ --emb_model text-embedding-ada-002 --split test --save_pred 
     ```
-
+    
     ```bash
     python eval.py --dataset amazon --model LLMReranker --emb_dir emb/ --output_dir output/  --emb_model text-embedding-ada-002 --split test --llm_model gpt-4-1106-preview --save_pred
     ```
@@ -132,7 +133,17 @@ There are two ways to load the knowledge base data:
     - `dataset`: the dataset to evaluate on, one of  `amazon`, `mag` or `prime`.
     - `model`: the model to be evaluated, one of `VSS`, `MultiVSS`, `LLMReranker`. 
         - Please specify the name of embedding model with argument `--emb_model`.
-        - If you are using `LLMReranker`, please specify API keys at `config/openai_api_key.txt` or `config/claude_api_key.txt` and the LLM name with argument `--llm_model`.
+        - If you are using `LLMReranker`, please specify the LLM name with argument `--llm_model`.
+        - Specify API keys in command line
+            ```
+            export ANTHROPIC_API_KEY=YOUR_API_KEY
+            ```
+            or
+            ```
+            export OPENAI_API_KEY=YOUR_API_KEY
+            export OPENAI_ORG=YOUR_ORGANIZATION
+            ```
+        or (deprecated) locally at `config/openai_api_key.txt` or `config/claude_api_key.txt` 
     - `emb_dir`: the directory to store embeddings.
     - `split`: the split to evaluate on, one of `train`, `val`, `test`, and `human_generated_eval` (to be evaluated on the human generated query dataset).
     - `output_dir`: the directory to store evaluation outputs.
