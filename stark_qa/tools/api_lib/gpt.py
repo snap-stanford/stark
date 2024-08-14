@@ -2,6 +2,7 @@ import time
 import openai
 from typing import Union, List, Dict
 
+
 def get_gpt_output(message: Union[str, List[Dict[str, str]]], 
                    model: str = "gpt-4-1106-preview", 
                    max_tokens: int = 2048, 

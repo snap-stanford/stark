@@ -1,5 +1,5 @@
 import time
-from stark_qa.tools.api_lib import anthropic_client
+import anthropic
 from typing import Any, Union
 
 
@@ -32,6 +32,7 @@ def complete_text_claude(message: Union[str, list],
     Raises:
         Exception: If the completion fails after the maximum number of retries.
     """
+    anthropic_client  = anthropic.Anthropic()
     if isinstance(message, str):
         if json_object:
             message = "You are a helpful assistant designed to output in JSON format." + message

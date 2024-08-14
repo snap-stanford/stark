@@ -1,21 +1,21 @@
 import re
 import torch
-import openai
+import voyageai
 from functools import partial
 import time
 import multiprocessing
 
 
-def get_openai_embedding(text: str, 
-                         model: str = "text-embedding-ada-002",
+def get_voyage_embedding(text: str, 
+                         model: str = "voyage-large-2-instruct",
                          max_retry: int = 10,
-                         sleep_time: int = 0) -> torch.FloatTensor:
+                         sleep_time: int = 60) -> torch.FloatTensor:
     """
-    Get the OpenAI embedding for a given text.
+    Get the voyage embedding for a given text.
 
     Args:
         text (str): The input text to be embedded.
-        model (str): The model to use for embedding. Default is "text-embedding-ada-002".
+        model (str): The model to use for embedding. Default is "voyage-large-2-instruct".
         max_retry (int): Maximum number of retries in case of an error. Default is 1.
         sleep_time (int): Sleep time between retries in seconds. Default is 0.
 
@@ -25,17 +25,16 @@ def get_openai_embedding(text: str,
     assert isinstance(text, str), f'text must be str, but got {type(text)}'
     assert len(text) > 0, 'text to be embedded should be non-empty'
     
-    client = openai.OpenAI()
-    
+    client = voyageai.Client()
     for _ in range(max_retry):
         try:
-            emb = client.embeddings.create(input=[text], model=model)
-            return torch.FloatTensor(emb.data[0].embedding).view(1, -1)
-        except openai.BadRequestError as e:
+            emb = client.embed([text], model=model).embeddings
+            return torch.FloatTensor(emb).view(1, -1)
+        except voyageai.error.InvalidRequestError as e:
             print(f'{e}')
             e = str(e)
             ori_length = len(text.split(' '))
-            match = re.search(r'maximum context length is (\d+) tokens, however you requested (\d+) tokens', e)
+            match = re.search(r'The max allowed tokens per submitted batch is (\d+). Your batch has (\d+) tokens after truncation', e)
             if match is not None:
                 max_length = int(match.group(1))
                 cur_length = int(match.group(2))
@@ -45,27 +44,27 @@ def get_openai_embedding(text: str,
                     length = int(ratio * ori_length * (reduce_rate * 0.1))
                     shorten_text = ' '.join(shorten_text[:length])
                     try:
-                        emb = client.embeddings.create(input=[shorten_text], model=model)
+                        emb = client.embed([shorten_text], model=model).embeddings
                         print(f'length={length} works! reduce_rate={0.1 * reduce_rate}.')
-                        return torch.FloatTensor(emb.data[0].embedding).view(1, -1)
+                        return torch.FloatTensor(emb).view(1, -1)
                     except: 
                         continue
-        except (openai.RateLimitError, openai.APITimeoutError) as e:
+        except Exception as e:
             print(f'{e}, sleep for {sleep_time} seconds')
             time.sleep(sleep_time)
     raise RuntimeError("Failed to get embedding after maximum retries")
 
 
-def get_openai_embeddings(texts: list, 
-                          n_max_nodes: int = 5, 
-                          model: str = "text-embedding-ada-002") -> torch.FloatTensor:
+def get_voyage_embeddings(texts: list, 
+                          n_max_nodes: int = 128, 
+                          model: str = "voyage-large-2-instruct") -> torch.FloatTensor:
     """
-    Get embeddings for a list of texts using OpenAI's embedding model.
+    Get embeddings for a list of texts using voyage's embedding model.
 
     Args:
         texts (list): List of input texts to be embedded.
         n_max_nodes (int): Maximum number of parallel processes. Default is 5.
-        model (str): The model to use for embedding. Default is "text-embedding-ada-002".
+        model (str): The model to use for embedding. Default is "voyage-large-2-instruct".
 
     Returns:
         torch.FloatTensor: A tensor containing embeddings for all input texts.
@@ -74,7 +73,7 @@ def get_openai_embeddings(texts: list,
     assert all([len(s) > 0 for s in texts]), 'every string in the `texts` list to be embedded should be non-empty'
 
     processes = min(len(texts), n_max_nodes)
-    ada_encoder = partial(get_openai_embedding, model=model)
+    ada_encoder = partial(get_voyage_embedding, model=model)
     
     with multiprocessing.Pool(processes=processes) as pool:
         results = pool.map(ada_encoder, texts)

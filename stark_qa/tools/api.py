@@ -6,6 +6,7 @@ from stark_qa.tools.api_lib.claude import complete_text_claude
 from stark_qa.tools.api_lib.gpt import get_gpt_output
 from stark_qa.tools.api_lib.huggingface import complete_text_hf
 from stark_qa.tools.api_lib.openai_emb import get_openai_embedding, get_openai_embeddings
+from stark_qa.tools.api_lib.voyage_emb import get_voyage_embedding, get_voyage_embeddings
 
 
 # Default parameters for retrying API calls and the sleep time between retries

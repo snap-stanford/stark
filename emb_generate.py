@@ -3,13 +3,14 @@ import os.path as osp
 import random
 import sys
 import argparse
+import pandas as pd
 
 import torch
 from tqdm import tqdm
 
 sys.path.append('.')
 from stark_qa import load_skb, load_qa
-from stark_qa.tools.api import get_openai_embeddings
+from stark_qa.tools.api import get_openai_embeddings, get_voyage_embeddings
 
 
 def parse_args():
@@ -21,7 +22,8 @@ def parse_args():
                         choices=[
                             'text-embedding-ada-002', 
                             'text-embedding-3-small', 
-                            'text-embedding-3-large'
+                            'text-embedding-3-large',
+                            'voyage-large-2-instruct'
                             ]
                         )
 
@@ -29,9 +31,10 @@ def parse_args():
     parser.add_argument('--mode', default='doc', choices=['doc', 'query'])
 
     # Path settings
+    parser.add_argument("--data_dir", default="data/", type=str)
     parser.add_argument("--emb_dir", default="emb/", type=str)
 
-    # Text settings
+    # text settings
     parser.add_argument('--add_rel', action='store_true', default=False, help='add relation to the text')
     parser.add_argument('--compact', action='store_true', default=False, help='make the text compact when input to the model')
 
@@ -40,7 +43,7 @@ def parse_args():
 
     # Batch and node settings
     parser.add_argument("--batch_size", default=100, type=int)
-    parser.add_argument("--n_max_nodes", default=10, type=int)
+    parser.add_argument("--n_max_nodes", default=64, type=int)
 
     return parser.parse_args()
     
@@ -51,8 +54,10 @@ if __name__ == '__main__':
     mode_surfix += '_no_rel' if not args.add_rel else ''
     mode_surfix += '_no_compact' if not args.compact else ''
     emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, f'{args.mode}{mode_surfix}')
+    csv_cache = osp.join(args.data_dir, args.dataset, f'{args.mode}{mode_surfix}.csv')
     print(f'Embedding directory: {emb_dir}')
     os.makedirs(emb_dir, exist_ok=True)
+    os.makedirs(os.path.dirname(csv_cache), exist_ok=True)
 
     if args.mode == 'doc':
         kb = load_skb(args.dataset)
@@ -66,15 +71,22 @@ if __name__ == '__main__':
             
     if osp.exists(emb_path):
         emb_dict = torch.load(emb_path)
-        exisiting_indices = list(emb_dict.keys())
+        existing_indices = list(emb_dict.keys())
         print(f'Loaded existing embeddings from {emb_path}. Size: {len(emb_dict)}')
     else:
         emb_dict = {}
-        exisiting_indices = []
+        existing_indices = []
 
-    texts, indices = [], []
+    if osp.exists(csv_cache):
+        df = pd.read_csv(csv_cache)
+        indices = df['index'].tolist()
+        texts = df['text'].tolist()
+    else:
+        texts, indices = [], []
+    existing_indices = set(existing_indices + indices)
+
     for idx in tqdm(lst):
-        if idx in exisiting_indices:
+        if idx in existing_indices:
             continue
         if args.mode == 'query':
             text = qa_dataset.get_query_by_qid(idx)
@@ -82,15 +94,24 @@ if __name__ == '__main__':
             text = kb.get_doc_info(idx, add_rel=args.add_rel, compact=args.compact)
         texts.append(text)
         indices.append(idx)
-        
+
+    # Create a DataFrame and save it to a CSV file
+    df = pd.DataFrame({'index': indices, 'text': texts})
+    df.to_csv(csv_cache, index=False)
+
     print(f'Generating embeddings for {len(texts)} texts...')
     for i in tqdm(range(0, len(texts), args.batch_size)):
         batch_texts = texts[i:i+args.batch_size]
-        batch_embs = get_openai_embeddings(
+        if 'voyage' in args.emb_model:
+            get_emb_func = get_voyage_embeddings
+        else:
+            get_emb_func = get_openai_embeddings
+            
+        batch_embs = get_emb_func(
             batch_texts, 
             model=args.emb_model, 
             n_max_nodes=args.n_max_nodes
-            ).view(len(batch_texts), -1).cpu()
+        ).view(len(batch_texts), -1).cpu()
         batch_indices = indices[i:i+args.batch_size]
         for idx, emb in zip(batch_indices, batch_embs):
             emb_dict[idx] = emb

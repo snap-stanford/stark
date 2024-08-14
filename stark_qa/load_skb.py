@@ -35,19 +35,19 @@ def load_skb(name: str,
     if name == 'amazon':
         categories = ['Sports_and_Outdoors']
         skb = AmazonSKB(root=data_root,
-                       categories=categories,
-                       download_processed=download_processed,
-                       **kwargs
-                       )
+                        categories=categories,
+                        download_processed=download_processed,
+                        **kwargs
+                        )
     elif name == 'prime':
         skb = PrimeSKB(root=data_root, 
-                      download_processed=download_processed,
-                        **kwargs)
+                       download_processed=download_processed,
+                       **kwargs)
     
     elif name == 'mag':
         skb = MagSKB(root=data_root, 
-                    download_processed=download_processed,
-                    **kwargs)
+                     download_processed=download_processed,
+                     **kwargs)
     else:
         raise ValueError(f"Unknown dataset {name}")
     return skb

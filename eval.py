@@ -55,7 +55,7 @@ if __name__ == "__main__":
         json.load(open("config/default_args.json", "r"))[args.dataset]
     )
     args = merge_args(args, default_args)
-
+    
     query_emb_surfix = f'_{args.split}' if args.split == 'human_generated_eval' else ''
     args.query_emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, f"query{query_emb_surfix}")
     args.node_emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, "doc")
@@ -106,10 +106,9 @@ if __name__ == "__main__":
         existing_idx = eval_csv["idx"].tolist()
 
     indices = split_idx[args.split].tolist()
+    remaining_indices = set(indices) - set(existing_idx)
 
-    for idx in tqdm(indices):
-        if idx in existing_idx:
-            continue
+    for idx in tqdm(remaining_indices):
         query, query_id, answer_ids, meta_info = qa_dataset[idx]
         pred_dict = model.forward(query, query_id)
 
