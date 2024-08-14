@@ -4,13 +4,13 @@ from typing import Any, Union, List, Dict
 
 import torch
 import torch.nn as nn
-from stark_qa.tools.api import get_openai_embedding
+from stark_qa.tools.api import get_api_embedding, get_api_embeddings
 from stark_qa.evaluator import Evaluator
 
 
 class ModelForSTaRKQA(nn.Module):
     
-    def __init__(self, skb):
+    def __init__(self, skb, query_emb_dir='.'):
         """
         Initializes the model with the given knowledge base.
         
@@ -22,7 +22,14 @@ class ModelForSTaRKQA(nn.Module):
 
         self.candidate_ids = skb.candidate_ids
         self.num_candidates = skb.num_candidates
-        self.query_emb_dict = {}
+        self.query_emb_dir = query_emb_dir
+
+        query_emb_path = osp.join(self.query_emb_dir, 'query_emb_dict.pt')
+        if os.path.exists(query_emb_path):
+            print(f'Load query embeddings from {query_emb_path}')
+            self.query_emb_dict = torch.load(query_emb_path)
+        else:
+            self.query_emb_dict = {}
         self.evaluator = Evaluator(self.candidate_ids)
     
     def forward(self, 
@@ -57,46 +64,30 @@ class ModelForSTaRKQA(nn.Module):
             
         Returns:
             query_emb (torch.Tensor): Query embedding.
-        """
+        """        
         if query_id is None:
             if isinstance(query, int):
-                query_emb = get_openai_embedding(query, model=emb_model)
+                query_emb = get_api_embedding(emb_model, text=query)
             else:
-                query_emb = torch.concat([get_openai_embedding(q, model=emb_model) for q in query], dim=0)
-        elif len(self.query_emb_dict) > 0:
+                query_emb = torch.concat([get_api_embeddings(emb_model, text=q) for q in query], dim=0)
+        
+        if len(self.query_emb_dict) > 0:
             if isinstance(query_id, int):
                 query_emb = self.query_emb_dict[query_id]
             else:
                 query_emb = torch.concat([self.query_emb_dict[qid] for qid in query_id], dim=0)
         else:
-            query_emb_dic_path = osp.join(self.query_emb_dir, 'query_emb_dict.pt')
-            if os.path.exists(query_emb_dic_path):
-                print(f'Load query embeddings from {query_emb_dic_path}')
-                self.query_emb_dict = torch.load(query_emb_dic_path)
-                if isinstance(query_id, int):
-                    query_emb = self.query_emb_dict[query_id]
-                else:
-                    query_emb = torch.concat([self.query_emb_dict[qid] for qid in query_id], dim=0)
-            else:
-                query_emb_dir = osp.join(self.query_emb_dir, 'query_embs')
-                if not os.path.exists(query_emb_dir):
-                    os.makedirs(query_emb_dir)
-                if isinstance(query_id, int):
-                    query_emb_path = osp.join(query_emb_dir, f'query_{query_id}.pt')
-                    query_emb = get_openai_embedding(query, model=emb_model)
-                    torch.save(query_emb, query_emb_path)
-                else:
-                    query_emb = []
-                    for q, qid in zip(query, query_id):
-                        query_emb_path = osp.join(query_emb_dir, f'query_{qid}.pt')
-                        if os.path.exists(query_emb_path):
-                            query_emb.append(torch.load(query_emb_path))
-                        else:
-                            emb = get_openai_embedding(q, model=emb_model)
-                            torch.save(emb, query_emb_path)
-                            query_emb.append(emb)
-                    query_emb = torch.concat(query_emb, dim=0)
-                    
+            query_emb = get_api_embeddings(emb_model, texts=query)
+            if isinstance(query_id, int):
+                query_id = [query_id]
+            for qid, emb in zip(query_id, query_emb):
+                self.query_emb_dict[qid] = emb.view(1, -1)
+            torch.save(self.query_emb_dict, osp.join(self.query_emb_dir, 'query_emb_dict.pt'))
+            
+        if isinstance(query, str):
+            query_emb = query_emb.view(1, -1)
+        else:
+            query_emb = query_emb.view(len(query), -1)
         return query_emb
     
     def evaluate(self, 

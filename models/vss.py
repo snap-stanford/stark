@@ -12,8 +12,7 @@ class VSS(ModelForSTaRKQA):
                  query_emb_dir: str, 
                  candidates_emb_dir: str, 
                  emb_model: str = 'text-embedding-ada-002',
-                 device: str = 'cpu',
-                 pin_gpu: bool = True):
+                 device: str = 'cuda'):
         """
         Vector Similarity Search
 
@@ -23,9 +22,8 @@ class VSS(ModelForSTaRKQA):
             candidates_emb_dir (str): Directory to candidate embeddings.
             emb_model (str): Embedding model name.
         """
-        super(VSS, self).__init__(skb)
+        super(VSS, self).__init__(skb, query_emb_dir=query_emb_dir)
         self.emb_model = emb_model
-        self.query_emb_dir = query_emb_dir
         self.candidates_emb_dir = candidates_emb_dir
         self.device = device
         self.evaluator = Evaluator(self.candidate_ids, device)
@@ -35,6 +33,7 @@ class VSS(ModelForSTaRKQA):
             candidate_emb_dict = torch.load(candidate_emb_path)
             print(f'Loaded candidate_emb_dict from {candidate_emb_path}!')
         else:
+            # deprecated, load embeddings one by one
             print('Loading candidate embeddings...')
             candidate_emb_dict = {}
             for idx in tqdm(self.candidate_ids):
@@ -43,8 +42,8 @@ class VSS(ModelForSTaRKQA):
             print(f'Saved candidate_emb_dict to {candidate_emb_path}!')
 
         assert len(candidate_emb_dict) == len(self.candidate_ids)
-        candidate_embs = [candidate_emb_dict[idx] for idx in self.candidate_ids]
-        self.candidate_embs = torch.cat(candidate_embs, dim=0).to(device) if pin_gpu else torch.cat(candidate_embs, dim=0)
+        candidate_embs = [candidate_emb_dict[idx].view(1, -1) for idx in self.candidate_ids]
+        self.candidate_embs = torch.cat(candidate_embs, dim=0).to(device)
     
     def forward(self, 
                 query: Union[str, List[str]], 

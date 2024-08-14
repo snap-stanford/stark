@@ -32,7 +32,8 @@ class LLMReranker(ModelForSTaRKQA):
                  candidates_emb_dir: str,
                  sim_weight: float = 0.1,
                  max_cnt: int = 3,
-                 max_k: int = 100):
+                 max_k: int = 100,
+                 device: str = 'cuda'):
         """
         Initializes the LLMReranker model.
 
@@ -55,7 +56,8 @@ class LLMReranker(ModelForSTaRKQA):
 
         self.query_emb_dir = query_emb_dir
         self.candidates_emb_dir = candidates_emb_dir
-        self.parent_vss = VSS(kb, query_emb_dir, candidates_emb_dir, emb_model=emb_model)
+        self.parent_vss = VSS(kb, query_emb_dir, candidates_emb_dir, 
+                              emb_model=emb_model, device=device)
 
     def forward(self, 
                 query: Union[str, List[str]],

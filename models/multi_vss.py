@@ -17,7 +17,8 @@ class MultiVSS(ModelForSTaRKQA):
                  emb_model: str = 'text-embedding-ada-002',
                  aggregate: str = 'top3_avg',
                  max_k: int = 50,
-                 chunk_size: int = 256):
+                 chunk_size: int = 256,
+                 device: str = 'cuda'):
         """
         Multivector Vector Similarity Search
 
@@ -40,7 +41,8 @@ class MultiVSS(ModelForSTaRKQA):
         self.query_emb_dir = query_emb_dir
         self.chunk_emb_dir = chunk_emb_dir
         self.candidates_emb_dir = candidates_emb_dir
-        self.parent_vss = VSS(skb, query_emb_dir, candidates_emb_dir, emb_model=emb_model)
+        self.parent_vss = VSS(skb, query_emb_dir, candidates_emb_dir, 
+                              emb_model=emb_model, device=device)
 
     def forward(self, 
                 query: Union[str, List[str]],

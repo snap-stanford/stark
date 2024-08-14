@@ -110,7 +110,7 @@ if __name__ == '__main__':
         
         batch_indices = indices[i:i+args.batch_size]
         for idx, emb in zip(batch_indices, batch_embs):
-            emb_dict[idx] = emb
+            emb_dict[idx] = emb.view(1, -1)
         
     torch.save(emb_dict, emb_path)
     print(f'Saved {len(emb_dict)} embeddings to {emb_path}!')
