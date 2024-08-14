@@ -44,8 +44,8 @@ class ModelForSTaRKQA(nn.Module):
         raise NotImplementedError
     
     def get_query_emb(self, 
-                       query: str, 
-                       query_id: int, 
+                       query: Union[str, List[str]], 
+                       query_id: Union[int, List[int]], 
                        emb_model: str = 'text-embedding-ada-002') -> torch.Tensor:
         """
         Retrieves or computes the embedding for the given query.
@@ -59,27 +59,49 @@ class ModelForSTaRKQA(nn.Module):
             query_emb (torch.Tensor): Query embedding.
         """
         if query_id is None:
-            query_emb = get_openai_embedding(query, model=emb_model)
+            if isinstance(query, int):
+                query_emb = get_openai_embedding(query, model=emb_model)
+            else:
+                query_emb = torch.concat([get_openai_embedding(q, model=emb_model) for q in query], dim=0)
         elif len(self.query_emb_dict) > 0:
-            query_emb = self.query_emb_dict[query_id]
+            if isinstance(query_id, int):
+                query_emb = self.query_emb_dict[query_id]
+            else:
+                query_emb = torch.concat([self.query_emb_dict[qid] for qid in query_id], dim=0)
         else:
             query_emb_dic_path = osp.join(self.query_emb_dir, 'query_emb_dict.pt')
             if os.path.exists(query_emb_dic_path):
                 print(f'Load query embeddings from {query_emb_dic_path}')
                 self.query_emb_dict = torch.load(query_emb_dic_path)
-                query_emb = self.query_emb_dict[query_id]
+                if isinstance(query_id, int):
+                    query_emb = self.query_emb_dict[query_id]
+                else:
+                    query_emb = torch.concat([self.query_emb_dict[qid] for qid in query_id], dim=0)
             else:
                 query_emb_dir = osp.join(self.query_emb_dir, 'query_embs')
                 if not os.path.exists(query_emb_dir):
                     os.makedirs(query_emb_dir)
-                query_emb_path = osp.join(query_emb_dir, f'query_{query_id}.pt')
-                query_emb = get_openai_embedding(query, model=emb_model)
-                torch.save(query_emb, query_emb_path)
+                if isinstance(query_id, int):
+                    query_emb_path = osp.join(query_emb_dir, f'query_{query_id}.pt')
+                    query_emb = get_openai_embedding(query, model=emb_model)
+                    torch.save(query_emb, query_emb_path)
+                else:
+                    query_emb = []
+                    for q, qid in zip(query, query_id):
+                        query_emb_path = osp.join(query_emb_dir, f'query_{qid}.pt')
+                        if os.path.exists(query_emb_path):
+                            query_emb.append(torch.load(query_emb_path))
+                        else:
+                            emb = get_openai_embedding(q, model=emb_model)
+                            torch.save(emb, query_emb_path)
+                            query_emb.append(emb)
+                    query_emb = torch.concat(query_emb, dim=0)
+                    
         return query_emb
     
     def evaluate(self, 
                  pred_dict: Dict[int, float], 
-                 answer_ids: torch.LongTensor, 
+                 answer_ids: Union[torch.LongTensor, List[Any]], 
                  metrics: List[str] = ['mrr', 'hit@3', 'recall@20'], 
                  **kwargs: Any) -> Dict[str, float]:
         """
@@ -95,3 +117,11 @@ class ModelForSTaRKQA(nn.Module):
             Dict[str, float]: A dictionary of evaluation metrics.
         """
         return self.evaluator(pred_dict, answer_ids, metrics)
+    
+    def evaluate_batch(self, 
+                pred_ids: List[int],
+                pred: torch.Tensor, 
+                answer_ids: Union[torch.LongTensor, List[Any]], 
+                metrics: List[str] = ['mrr', 'hit@3', 'recall@20'], 
+                **kwargs: Any) -> Dict[str, float]:
+        return self.evaluator.evaluate_batch(pred_ids, pred, answer_ids, metrics)
