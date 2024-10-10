@@ -11,7 +11,10 @@ from tqdm import tqdm
 sys.path.append('.')
 from stark_qa import load_skb, load_qa
 from stark_qa.tools.api import get_api_embeddings
+from stark_qa.tools.local_encoder import get_llm2vec_embeddings, get_gritlm_embeddings
+from models.model import get_embeddings
 
+import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -23,7 +26,9 @@ def parse_args():
                             'text-embedding-ada-002', 
                             'text-embedding-3-small', 
                             'text-embedding-3-large',
-                            'voyage-large-2-instruct'
+                            'voyage-large-2-instruct',
+                            'GritLM/GritLM-7B', 
+                            'McGill-NLP/LLM2Vec-Meta-Llama-3-8B-Instruct-mntp'
                             ]
                         )
 
@@ -34,7 +39,7 @@ def parse_args():
     parser.add_argument("--data_dir", default="data/", type=str)
     parser.add_argument("--emb_dir", default="emb/", type=str)
 
-    # text settings
+    # Text settings
     parser.add_argument('--add_rel', action='store_true', default=False, help='add relation to the text')
     parser.add_argument('--compact', action='store_true', default=False, help='make the text compact when input to the model')
 
@@ -43,13 +48,26 @@ def parse_args():
 
     # Batch and node settings
     parser.add_argument("--batch_size", default=100, type=int)
-    parser.add_argument("--n_max_nodes", default=64, type=int)
 
-    return parser.parse_args()
+    # encode kwargs
+    parser.add_argument("--n_max_nodes", default=None, type=int, metavar="ENCODE")
+    parser.add_argument("--device", default=None, type=str, metavar="ENCODE")
+    parser.add_argument("--peft_model_name", default=None, type=str, help="llm2vec pdft model", metavar="ENCODE")
+    parser.add_argument("--instruction", type=str, 
+                        default="Given a query, retrieve entities that satisfy the requirements based on entity descriptions", 
+                        help="gritl/llm2vec instruction", metavar="ENCODE")
+
+    args = parser.parse_args()
+
+    # Create encode_kwargs based on the custom metavar "ENCODE"
+    encode_kwargs = {k: v for k, v in vars(args).items() if v is not None and parser._option_string_actions[f'--{k}'].metavar == "ENCODE"}
+
+    return args, encode_kwargs
     
 
 if __name__ == '__main__':
-    args = parse_args()
+    args, encode_kwargs = parse_args()
+
     mode_surfix = '_human_generated_eval' if args.human_generated_eval and args.mode == 'query' else ''
     mode_surfix += '_no_rel' if not args.add_rel else ''
     mode_surfix += '_no_compact' if not args.compact else ''
@@ -61,8 +79,8 @@ if __name__ == '__main__':
     os.makedirs(os.path.dirname(csv_cache), exist_ok=True)
 
     if args.mode == 'doc':
-        kb = load_skb(args.dataset)
-        lst = kb.candidate_ids
+        skb = load_skb(args.dataset)
+        lst = skb.candidate_ids
         emb_path = osp.join(emb_dir, f'candidate_emb_dict.pt')
     if args.mode == 'query':
         qa_dataset = load_qa(args.dataset, human_generated_eval=args.human_generated_eval)
@@ -92,22 +110,17 @@ if __name__ == '__main__':
     else:
         indices = lst
         texts = [qa_dataset.get_query_by_qid(idx) if args.mode == 'query'
-                 else kb.get_doc_info(idx, add_rel=args.add_rel, compact=args.compact) for idx in tqdm(indices, desc="Gathering docs")]
+                 else skb.get_doc_info(idx, add_rel=args.add_rel, compact=args.compact) for idx in tqdm(indices, desc="Gathering docs")]
         if args.mode == 'doc':
             df = pd.DataFrame({'index': indices, 'text': texts})
             df.to_csv(csv_cache, index=False)
 
     print(f'Generating embeddings for {len(texts)} texts...')
-    for i in tqdm(range(0, len(texts), args.batch_size), desc="Gnerating embeddings"):
+    for i in tqdm(range(0, len(texts), args.batch_size), desc="Generating embeddings"):
         batch_texts = texts[i:i+args.batch_size]
+        batch_embs = get_embeddings(batch_texts, args.emb_model, **encode_kwargs)
+        batch_embs = batch_embs.view(len(batch_texts), -1).cpu()
             
-        batch_embs = get_api_embeddings(
-            args.emb_model,
-            batch_texts, 
-            model=args.emb_model, 
-            n_max_nodes=args.n_max_nodes
-        ).view(len(batch_texts), -1).cpu()
-        
         batch_indices = indices[i:i+args.batch_size]
         for idx, emb in zip(batch_indices, batch_embs):
             emb_dict[idx] = emb.view(1, -1)

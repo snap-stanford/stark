@@ -312,7 +312,7 @@ class MagSKB(SKB):
     def get_doc_info(self, 
                      idx : int,
                      compact: bool = False,
-                     add_rel: bool = True,
+                     add_rel: bool = False,
                      n_rel: int = -1) -> str:
         """
         Get document information for the specified node.

@@ -6,6 +6,8 @@ config/claude_api_key.txt
 config/openai_api_key.txt
 _*
 docs/
+experiments/
+experiments_full/
 
 draft.ipynb
 download_mag.py

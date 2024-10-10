@@ -4,7 +4,8 @@ from typing import Any, Union, List, Dict
 
 import torch
 import torch.nn as nn
-from stark_qa.tools.api import get_api_embedding, get_api_embeddings
+from stark_qa.tools.api import get_api_embeddings
+from stark_qa.tools.local_encoder import get_llm2vec_embeddings, get_gritlm_embeddings
 from stark_qa.evaluator import Evaluator
 
 
@@ -53,7 +54,8 @@ class ModelForSTaRKQA(nn.Module):
     def get_query_emb(self, 
                        query: Union[str, List[str]], 
                        query_id: Union[int, List[int]], 
-                       emb_model: str = 'text-embedding-ada-002') -> torch.Tensor:
+                       emb_model: str = 'text-embedding-ada-002', 
+                       **encode_kwargs) -> torch.Tensor:
         """
         Retrieves or computes the embedding for the given query.
         
@@ -66,18 +68,15 @@ class ModelForSTaRKQA(nn.Module):
             query_emb (torch.Tensor): Query embedding.
         """        
         if query_id is None:
-            if isinstance(query, int):
-                query_emb = get_api_embedding(emb_model, text=query)
-            else:
-                query_emb = torch.concat([get_api_embeddings(emb_model, text=q) for q in query], dim=0)
+            query_emb = get_embeddings(query, emb_model, **encode_kwargs)
         
-        if len(self.query_emb_dict) > 0:
+        elif len(self.query_emb_dict) > 0:
             if isinstance(query_id, int):
                 query_emb = self.query_emb_dict[query_id]
             else:
                 query_emb = torch.concat([self.query_emb_dict[qid] for qid in query_id], dim=0)
         else:
-            query_emb = get_api_embeddings(emb_model, texts=query)
+            query_emb = get_embeddings(query, emb_model, **encode_kwargs)
             if isinstance(query_id, int):
                 query_id = [query_id]
             for qid, emb in zip(query_id, query_emb):
@@ -116,3 +115,27 @@ class ModelForSTaRKQA(nn.Module):
                 metrics: List[str] = ['mrr', 'hit@3', 'recall@20'], 
                 **kwargs: Any) -> Dict[str, float]:
         return self.evaluator.evaluate_batch(pred_ids, pred, answer_ids, metrics)
+
+
+def get_embeddings(text, model_name, **encode_kwargs):
+    """
+    Get embeddings for the given text using the specified model.
+    
+    Args:
+        model_name (str): Model name.
+        text (Union[str, List[str]]): The input text to be embedded.
+        
+    Returns:
+        torch.Tensor: Embedding of the input text.
+    """
+    if isinstance(text, str):   
+        text = [text]
+
+    if 'GritLM' in model_name:
+        emb = get_gritlm_embeddings(text, model_name, **encode_kwargs)
+    elif 'LLM2Vec' in model_name:
+        emb = get_llm2vec_embeddings(text, model_name, **encode_kwargs)
+    else:
+        emb = get_api_embeddings(text, model_name, **encode_kwargs)
+    return emb.view(len(text), -1)
+    

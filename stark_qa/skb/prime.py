@@ -270,7 +270,7 @@ class PrimeSKB(SKB):
         register_node(node, node_info)
         return node
     
-    def get_doc_info(self, idx, add_rel=True, compact=False, n_rel=-1) -> str:
+    def get_doc_info(self, idx, add_rel=False, compact=False, n_rel=-1) -> str:
         """
         Get document information for the specified node.
 

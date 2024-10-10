@@ -228,7 +228,7 @@ class AmazonSKB(SKB):
         return chunk 
     
     def get_doc_info(self, idx: int, 
-                     add_rel: bool = True, 
+                     add_rel: bool = False, 
                      compact: bool = False) -> str:
         """
         Get document information for the specified node.

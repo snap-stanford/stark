@@ -6,7 +6,6 @@ from bs4 import BeautifulSoup
 from nltk.corpus import wordnet
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-
 def compact_text(text):
     """
     Compact the text by removing unnecessary spaces and punctuation issues.
@@ -17,12 +16,13 @@ def compact_text(text):
     Returns:
         str: Compacted text.
     """
-    text = text.replace("\n", ". ").replace("- ", "")
+    text = text.replace("\n", ". ").replace("\r", "")
+    text = text.replace("- ", "")
     text = text.replace(": .", ":").replace(":.", ":")
-    text = text.replace("  ", " ")
+    text = re.sub(r"\s{2,}", " ", text)
     text = text.replace(".. ", ". ")
-    return text
 
+    return text
 
 def remove_punctuation(text):
     """

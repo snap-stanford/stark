@@ -1,12 +1,28 @@
 from .vss import  VSS
 from .llm_reranker import LLMReranker
 from .multi_vss import MultiVSS
+from .bm25 import BM25
 
-def get_model(args, kb):
+
+def get_model(args, skb, **kwargs):
     model_name = args.model
-    if model_name == 'VSS':
+    if model_name == 'BM25':
+        return BM25(skb)
+    if model_name == 'Colbertv2':
+        try:
+            from .colbert import Colbertv2
+            return Colbertv2(skb, 
+                             dataset_name=args.dataset,
+                             save_dir=args.output_dir,
+                             download_dir=args.download_dir,
+                             human_generated_eval=args.split=='human_generated_eval',
+                             **kwargs
+                             )
+        except ImportError:
+            raise ImportError("Please install the colbert package using `pip install colbert-ai`.")
+    elif model_name == 'VSS':
         return VSS(
-            kb,
+            skb,
             emb_model=args.emb_model,
             query_emb_dir=args.query_emb_dir, 
             candidates_emb_dir=args.node_emb_dir,
@@ -14,7 +30,7 @@ def get_model(args, kb):
         )
     if model_name == 'MultiVSS':
         return MultiVSS(
-            kb,
+            skb,
             emb_model=args.emb_model,
             query_emb_dir=args.query_emb_dir, 
             candidates_emb_dir=args.node_emb_dir,
@@ -25,7 +41,7 @@ def get_model(args, kb):
             device=args.device
         )
     if model_name == 'LLMReranker':
-        return LLMReranker(kb, 
+        return LLMReranker(skb, 
                            emb_model=args.emb_model,
                            llm_model=args.llm_model,
                            query_emb_dir=args.query_emb_dir, 

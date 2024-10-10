@@ -34,20 +34,20 @@ registered_text_completion_llms = {
 }
 
 
-def get_api_embedding(model_name, *args, **kwargs):
+def get_api_embedding(text, model_name, *args, **kwargs):
     if 'voyage' in model_name:
-        return get_voyage_embedding(*args, **kwargs)
+        return get_voyage_embedding(text, model_name, *args, **kwargs)
     elif 'text-embedding' in model_name:
-        return get_openai_embedding(*args, **kwargs)
+        return get_openai_embedding(text, model_name, *args, **kwargs)
     else:
         raise ValueError(f"Model {model_name} not recognized.")
 
 
-def get_api_embeddings(model_name, *args, **kwargs):
+def get_api_embeddings(text, model_name, *args, **kwargs):
     if 'voyage' in model_name:
-        return get_voyage_embeddings(*args, **kwargs)
+        return get_voyage_embeddings(text, model_name, *args, **kwargs)
     elif 'text-embedding' in model_name:
-        return get_openai_embeddings(*args, **kwargs)
+        return get_openai_embeddings(text, model_name, *args, **kwargs)
     else:
         raise ValueError(f"Model {model_name} not recognized.")
 

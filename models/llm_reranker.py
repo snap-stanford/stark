@@ -91,10 +91,10 @@ class LLMReranker(ModelForSTaRKQA):
             node_type = self.skb.get_node_type_by_id(node_id)
             prompt = (
                 f'You are a helpful assistant that examines if a {node_type} '
-                f'satisfies a given query and assign a score from 0.0 to 1.0. '
-                f'If the {node_type} does not satisfy the query, the score should be 0.0. '
+                f'satisfies the requirements in a given query and assign a score from 0.0 to 1.0. '
+                f'If the {node_type} does not satisfy any requirement in the query, the score should be 0.0. '
                 f'If there exists explicit and strong evidence supporting that {node_type} '
-                f'satisfies the query, the score should be 1.0. If partial evidence or weak '
+                f'satisfies all aspects mentioned by the query, the score should be 1.0. If partial evidence or weak '
                 f'evidence exists, the score should be between 0.0 and 1.0.\n'
                 f'Here is the query:\n\"{query}\"\n'
                 f'Here is the information about the {node_type}:\n' +

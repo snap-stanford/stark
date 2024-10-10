@@ -18,12 +18,13 @@ def parse_args():
 
     # Dataset and model selection
     parser.add_argument("--dataset", default="amazon", choices=['amazon', 'prime', 'mag'])
-    parser.add_argument("--model", default="VSS", choices=["VSS", "MultiVSS", "LLMReranker"])
+    parser.add_argument("--model", default="VSS", choices=["BM25", "Colbertv2", "VSS", "MultiVSS", "LLMReranker"])
     parser.add_argument("--split", default="test", choices=["train", "val", "test", "human_generated_eval"])
 
     # Path settings
-    parser.add_argument("--emb_dir", type=str, required=True)
-    parser.add_argument("--output_dir", type=str, required=True)
+    parser.add_argument("--output_dir", type=str, default='output/')
+    parser.add_argument("--download_dir", type=str, default='output/')
+    parser.add_argument("--emb_dir", type=str, default='emb/')
 
     # Evaluation settings
     parser.add_argument("--test_ratio", type=float, default=1.0)
@@ -47,7 +48,7 @@ def parse_args():
     parser.add_argument("--save_pred", action="store_true")
     parser.add_argument("--save_topk", type=int, default=500, help="topk predicted indices to save")
 
-    # embeddings should/will be stored under f'doc{surfix}', e.g., _no_compact, _no_rel
+    # load the embeddings stored under folder f'doc{surfix}' or f'query{surfix}', e.g., _no_compact, 
     parser.add_argument("--surfix", type=str, default='')
 
     return parser.parse_args()
@@ -65,7 +66,13 @@ if __name__ == "__main__":
     args.query_emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, f"query{query_emb_surfix}{args.surfix}")
     args.node_emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, f"doc{args.surfix}")
     args.chunk_emb_dir = osp.join(args.emb_dir, args.dataset, args.emb_model, f"chunk{args.surfix}")
-    output_dir = osp.join(args.output_dir, "eval", args.dataset, args.model, args.llm_model if args.model == 'LLMReranker' else args.emb_model)
+
+    output_dir = osp.join(args.output_dir, "eval", args.dataset, args.model)
+    if args.model == 'LLMReranker':
+        output_dir = osp.join(output_dir, args.llm_model)
+    elif args.model in ['VSS', 'MultiVSS']:
+        output_dir = osp.join(output_dir, args.emb_model)
+    args.output_dir = output_dir
 
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(args.query_emb_dir, exist_ok=True)
@@ -80,9 +87,9 @@ if __name__ == "__main__":
         else osp.join(output_dir, f"eval_metrics_{args.split}_{args.test_ratio}.json")
     )
 
-    kb = load_skb(args.dataset)
+    skb = load_skb(args.dataset)
     qa_dataset = load_qa(args.dataset, human_generated_eval=args.split == 'human_generated_eval')
-    model = get_model(args, kb)
+    model = get_model(args, skb)
 
     split_idx = qa_dataset.get_idx_split(test_ratio=args.test_ratio)
 
