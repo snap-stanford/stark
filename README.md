@@ -23,7 +23,7 @@
 
 
 ## NEWS
-- **[Sep 2024]** STaRK is accecpted to 2024 NeurIPS Dataset & Benchmark Track!
+- **[Sep 2024]** STaRK is accepted to 2024 NeurIPS Dataset & Benchmark Track!
 - **[Jun 2024]** We make our benchmark as a pip package [stark-qa](https://pypi.org/project/stark-qa/). You can directly load the data from the package now!
 - **[Jun 2024]** We migrate our data to [Hugging Face](https://huggingface.co/datasets/snap-stanford/stark)! You don't need to change anything, the data will be automatically downloaded.
 - **[May 2024]** We have augmented our benchmark with three high-quality human-generated query datasets which are open to access. See more details in our [updated arxiv](https://arxiv.org/abs/2404.13207)! 
