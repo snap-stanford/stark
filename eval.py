@@ -54,7 +54,6 @@ def parse_args():
     return parser.parse_args()
 
 
-
 if __name__ == "__main__":
     args = parse_args()
     default_args = load_args(
@@ -127,7 +126,7 @@ if __name__ == "__main__":
             queries, query_ids, answer_ids, meta_infos = zip(
                 *[qa_dataset[idx] for idx in batch_indices]
             )
-            pred_ids, pred = model.forward(queries, query_ids)
+            pred_ids, pred = model.forward(list(queries), list(query_ids))
             
             answer_ids = [torch.LongTensor(answer_id) for answer_id in answer_ids]
             results = model.evaluate_batch(pred_ids, pred, answer_ids, metrics=eval_metrics)

@@ -52,10 +52,10 @@ class ModelForSTaRKQA(nn.Module):
         raise NotImplementedError
     
     def get_query_emb(self, 
-                       query: Union[str, List[str]], 
-                       query_id: Union[int, List[int]], 
-                       emb_model: str = 'text-embedding-ada-002', 
-                       **encode_kwargs) -> torch.Tensor:
+                      query: Union[str, List[str]], 
+                      query_id: Union[int, List[int]], 
+                      emb_model: str = 'text-embedding-ada-002', 
+                      **encode_kwargs) -> torch.Tensor:
         """
         Retrieves or computes the embedding for the given query.
         
@@ -67,26 +67,22 @@ class ModelForSTaRKQA(nn.Module):
         Returns:
             query_emb (torch.Tensor): Query embedding.
         """        
+        if isinstance(query_id, int):
+            query_id = [query_id]
+        if isinstance(query, str):
+            query = [query]
+
         if query_id is None:
             query_emb = get_embeddings(query, emb_model, **encode_kwargs)
-        
-        elif len(self.query_emb_dict) > 0:
-            if isinstance(query_id, int):
-                query_emb = self.query_emb_dict[query_id]
-            else:
-                query_emb = torch.concat([self.query_emb_dict[qid] for qid in query_id], dim=0)
+        elif set(query_id).issubset(set(list(self.query_emb_dict.keys()))):
+            query_emb = torch.concat([self.query_emb_dict[qid] for qid in query_id], dim=0)
         else:
             query_emb = get_embeddings(query, emb_model, **encode_kwargs)
-            if isinstance(query_id, int):
-                query_id = [query_id]
             for qid, emb in zip(query_id, query_emb):
                 self.query_emb_dict[qid] = emb.view(1, -1)
             torch.save(self.query_emb_dict, osp.join(self.query_emb_dir, 'query_emb_dict.pt'))
             
-        if isinstance(query, str):
-            query_emb = query_emb.view(1, -1)
-        else:
-            query_emb = query_emb.view(len(query), -1)
+        query_emb = query_emb.view(len(query), -1)
         return query_emb
     
     def evaluate(self, 

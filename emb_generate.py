@@ -53,9 +53,7 @@ def parse_args():
     parser.add_argument("--n_max_nodes", default=None, type=int, metavar="ENCODE")
     parser.add_argument("--device", default=None, type=str, metavar="ENCODE")
     parser.add_argument("--peft_model_name", default=None, type=str, help="llm2vec pdft model", metavar="ENCODE")
-    parser.add_argument("--instruction", type=str, 
-                        default="Given a query, retrieve entities that satisfy the requirements based on entity descriptions", 
-                        help="gritl/llm2vec instruction", metavar="ENCODE")
+    parser.add_argument("--instruction", type=str, help="gritl/llm2vec instruction", metavar="ENCODE")
 
     args = parser.parse_args()
 

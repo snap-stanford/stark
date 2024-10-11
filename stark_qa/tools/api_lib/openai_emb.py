@@ -57,8 +57,8 @@ def get_openai_embedding(text: str,
 
 
 def get_openai_embeddings(texts: list, 
-                          n_max_nodes: int = 5, 
-                          model: str = "text-embedding-ada-002") -> torch.FloatTensor:
+                          model: str = "text-embedding-ada-002",
+                          n_max_nodes: int = 5) -> torch.FloatTensor:
     """
     Get embeddings for a list of texts using OpenAI's embedding model.
 
