@@ -1,6 +1,5 @@
 import re
 import torch
-import voyageai
 from functools import partial
 import time
 import multiprocessing
@@ -22,6 +21,11 @@ def get_voyage_embedding(text: str,
     Returns:
         torch.FloatTensor: The embedding of the input text.
     """
+    try:
+        import voyageai
+    except ImportError:
+        raise ImportError("Please install the voyageai package using `pip install voyageai`.")
+
     assert isinstance(text, str), f'text must be str, but got {type(text)}'
     assert len(text) > 0, 'text to be embedded should be non-empty'
     
@@ -56,8 +60,8 @@ def get_voyage_embedding(text: str,
 
 
 def get_voyage_embeddings(texts: list, 
-                          n_max_nodes: int = 128, 
-                          model: str = "voyage-large-2-instruct") -> torch.FloatTensor:
+                          model: str = "voyage-large-2-instruct", 
+                          n_max_nodes: int = 128, ) -> torch.FloatTensor:
     """
     Get embeddings for a list of texts using voyage's embedding model.
 

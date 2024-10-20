@@ -8,8 +8,7 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
-from stark_qa import load_qa, load_skb
-from models import get_model
+from stark_qa import load_qa, load_skb, load_model
 from stark_qa.tools.args import load_args, merge_args
 
 
@@ -19,7 +18,7 @@ def parse_args():
     # Dataset and model selection
     parser.add_argument("--dataset", default="amazon", choices=['amazon', 'prime', 'mag'])
     parser.add_argument("--model", default="VSS", choices=["BM25", "Colbertv2", "VSS", "MultiVSS", "LLMReranker"])
-    parser.add_argument("--split", default="test", choices=["train", "val", "test", "human_generated_eval"])
+    parser.add_argument("--split", default="test", choices=["train", "val", "test", "test-0.1", "human_generated_eval"])
 
     # Path settings
     parser.add_argument("--output_dir", type=str, default='output/')
@@ -88,7 +87,7 @@ if __name__ == "__main__":
 
     skb = load_skb(args.dataset)
     qa_dataset = load_qa(args.dataset, human_generated_eval=args.split == 'human_generated_eval')
-    model = get_model(args, skb)
+    model = load_model(args, skb)
 
     split_idx = qa_dataset.get_idx_split(test_ratio=args.test_ratio)
 

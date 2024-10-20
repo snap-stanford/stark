@@ -94,7 +94,7 @@ class STaRKDataset:
             return {'human_generated_eval': torch.LongTensor(self.indices)}
 
         split_idx = {}
-        for split in ['train', 'val', 'test']:
+        for split in ['train', 'val', 'test', 'test-0.1']:
             indices_file = osp.join(self.split_dir, f'{split}.index')
             with open(indices_file, 'r') as f:
                 indices = f.read().strip().split('\n')
@@ -123,12 +123,12 @@ class STaRKDataset:
         Return a subset of the dataset.
 
         Args:
-            split (str): Split type ('train', 'val', 'test').
+            split (str): Split type ('train', 'val', 'test', 'test-0.1').
 
         Returns:
             STaRKDataset: Subset of the dataset.
         """
-        assert split in ['train', 'val', 'test'], "Invalid split specified."
+        assert split in ['train', 'val', 'test', 'test-0.1'], "Invalid split specified."
         indices_file = osp.join(self.split_dir, f'{split}.index')
         with open(indices_file, 'r') as f:
             indices = f.read().strip().split('\n')

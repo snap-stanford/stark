@@ -38,4 +38,3 @@ if __name__ == "__main__":
     
     gdown.download(query_emb_url, query_emb_path, quiet=False)
     gdown.download(node_emb_url, node_emb_path, quiet=False)
-

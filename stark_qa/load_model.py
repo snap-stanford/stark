@@ -1,11 +1,10 @@
-from .vss import  VSS
-from .llm_reranker import LLMReranker
-from .multi_vss import MultiVSS
-from .bm25 import BM25
+from stark_qa.models import *
 
 
-def get_model(args, skb, **kwargs):
+def load_model(args, skb, **kwargs):
     model_name = args.model
+    assert model_name in REGISTERED_MODELS, f'{model_name} not implemented'
+
     if model_name == 'BM25':
         return BM25(skb)
     if model_name == 'Colbertv2':
@@ -50,4 +49,3 @@ def get_model(args, skb, **kwargs):
                            max_k=args.llm_topk,
                            device=args.device
                            )
-    raise NotImplementedError(f'{model_name} not implemented')

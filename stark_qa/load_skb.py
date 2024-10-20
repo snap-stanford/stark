@@ -1,7 +1,7 @@
 import os
 import os.path as osp
 from typing import Union
-from stark_qa.skb import SKB, AmazonSKB, PrimeSKB, MagSKB
+from stark_qa.skb import *
 
 
 def load_skb(name: str, 
@@ -24,8 +24,11 @@ def load_skb(name: str,
         ValueError: If the dataset name is not recognized.
         AssertionError: If `root` is not provided when `download_processed` is False.
     """
+    assert name in REGISTERED_SKBS, f"Unknown SKB {name}"
+
     if not download_processed:
         assert root is not None, "root must be provided if download_processed is False"
+
     if root is None:
         data_root = None
     else:
@@ -48,6 +51,4 @@ def load_skb(name: str,
         skb = MagSKB(root=data_root, 
                      download_processed=download_processed,
                      **kwargs)
-    else:
-        raise ValueError(f"Unknown dataset {name}")
     return skb

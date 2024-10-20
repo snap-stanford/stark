@@ -21,8 +21,8 @@
 </div>
 
 
-
 ## NEWS
+- **[Oct 2024]** [Camera-ready paper](https://github.com/snap-stanford/stark/blob/main/media/stark.pdf) is out! We add multiple retrieval models including BM25, Colbertv2, GritLM.
 - **[Sep 2024]** STaRK is accepted to 2024 NeurIPS Dataset & Benchmark Track!
 - **[Jun 2024]** We make our benchmark as a pip package [stark-qa](https://pypi.org/project/stark-qa/). You can directly load the data from the package now!
 - **[Jun 2024]** We migrate our data to [Hugging Face](https://huggingface.co/datasets/snap-stanford/stark)! You don't need to change anything, the data will be automatically downloaded.
@@ -122,10 +122,6 @@ pip install llm2vec gritlm bm25
     ```bash
     python emb_generate.py --dataset amazon --mode query --emb_dir emb/ --emb_model text-embedding-ada-002
     ```
-    ```bash
-    python emb_generate.py --dataset amazon --mode query --emb_dir emb/ --emb_model GritLM/GritLM-7B --instruction "Given a query, retrieve entities that satisfy the requirements based on entity descriptions"
-    ```
-    
     - `dataset`: one of `amazon`, `mag` or `prime`.
     - `mode`: the content to embed, one of `query` or `doc` (node documents).
     - `emb_dir`: the directory to store embeddings.
@@ -138,11 +134,16 @@ pip install llm2vec gritlm bm25
     ```
     
     ```bash
-    python eval.py --dataset amazon --model LLMReranker --emb_dir emb/ --output_dir output/  --emb_model text-embedding-ada-002 --split test --llm_model gpt-4-1106-preview --save_pred
+    python eval.py --dataset amazon --model VSS --emb_dir emb/ --output_dir output/ --emb_model GritLM/GritLM-7B --split test-0.1 --save_pred 
     ```
 
+    ```bash
+    python eval.py --dataset amazon --model LLMReranker --emb_dir emb/ --output_dir output/ --emb_model text-embedding-ada-002 --split human_generated_eval --llm_model gpt-4-1106-preview --save_pred
+    ```
+
+    Key args:
     - `dataset`: the dataset to evaluate on, one of  `amazon`, `mag` or `prime`.
-    - `model`: the model to be evaluated, one of `VSS`, `MultiVSS`, `LLMReranker`. 
+    - `model`: the model to be evaluated, one of `BM25`, `Colbertv2`, `VSS`, `MultiVSS`, `LLMReranker`. 
         - Please specify the name of embedding model with argument `--emb_model`.
         - If you are using `LLMReranker`, please specify the LLM name with argument `--llm_model`.
         - Specify API keys in command line
@@ -159,8 +160,9 @@ pip install llm2vec gritlm bm25
             export VOYAGE_API_KEY=YOUR_API_KEY
             ```
     - `emb_dir`: the directory to store embeddings.
-    - `split`: the split to evaluate on, one of `train`, `val`, `test`, and `human_generated_eval` (to be evaluated on the human generated query dataset).
+    - `split`: the split to evaluate on, one of `train`, `val`, `test`, `test-0.1` (10% random sample), and `human_generated_eval` (to be evaluated on the human generated query dataset).
     - `output_dir`: the directory to store evaluation outputs.
+    - `surfix`: Specify when the stored embeddings are in folder `doc{surfix}` or `query{surfix}`, e.g., _no_compact, 
 
 
 ## Reference 

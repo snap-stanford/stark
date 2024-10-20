@@ -12,7 +12,7 @@ sys.path.append('.')
 from stark_qa import load_skb, load_qa
 from stark_qa.tools.api import get_api_embeddings
 from stark_qa.tools.local_encoder import get_llm2vec_embeddings, get_gritlm_embeddings
-from models.model import get_embeddings
+from stark.models.base import get_embeddings
 
 import argparse
 
@@ -79,11 +79,11 @@ if __name__ == '__main__':
     if args.mode == 'doc':
         skb = load_skb(args.dataset)
         lst = skb.candidate_ids
-        emb_path = osp.join(emb_dir, f'candidate_emb_dict.pt')
+        emb_path = osp.join(emb_dir, 'candidate_emb_dict.pt')
     if args.mode == 'query':
         qa_dataset = load_qa(args.dataset, human_generated_eval=args.human_generated_eval)
         lst = [qa_dataset[i][1] for i in range(len(qa_dataset))]
-        emb_path = osp.join(emb_dir, f'query_emb_dict.pt')
+        emb_path = osp.join(emb_dir, 'query_emb_dict.pt')
     random.shuffle(lst)
     
     # Load existing embeddings if they exist
