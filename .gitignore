@@ -4,7 +4,7 @@ data/
 output/
 config/claude_api_key.txt
 config/openai_api_key.txt
-_*
+
 docs/
 experiments/
 experiments_full/
