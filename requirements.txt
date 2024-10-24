@@ -1,6 +1,6 @@
 anthropic>=0.27.0
 bs4
-bm25
+bm25s
 colbert-ai 
 gdown
 gritlm
@@ -20,4 +20,4 @@ torch_geometric
 torchmetrics
 tqdm
 transformers
-voyogeai
+voyageai
