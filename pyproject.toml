@@ -4,14 +4,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "stark_qa"
-version = "0.1.0"
+version = "0.1.3"
 dependencies = [
-    "anthropic",
+    "anthropic>=0.27.0",
     "bs4",
+    "bm25s",
+    "colbert-ai",
     "gdown",
+    "gritlm",
     "huggingface_hub",
     "langchain",
     "langdetect",
+    "llm2vec",
     "multiprocess",
     "nltk",
     "numpy",
@@ -24,6 +28,7 @@ dependencies = [
     "torchmetrics",
     "tqdm",
     "transformers",
+    "voyageai"
 ]
 requires-python = ">=3.8,<3.12"
 classifiers = [
@@ -49,7 +54,7 @@ keywords = ["nlp", "information-retrieval", "graph", "knowledge-base", "semi-str
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["stark_qa*"]  
+include = ["stark_qa*"]
 namespaces = false
 
 [project.urls]
