@@ -1,9 +1,13 @@
-anthropic
+anthropic>=0.27.0
 bs4
+bm25
+colbert-ai 
 gdown
+gritlm
 huggingface_hub
 langchain
 langdetect
+llm2vec
 multiprocess
 nltk
 numpy
@@ -16,4 +20,4 @@ torch_geometric
 torchmetrics
 tqdm
 transformers
-
+voyogeai
