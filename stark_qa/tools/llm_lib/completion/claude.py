@@ -42,7 +42,7 @@ def complete_text_claude(message: Union[str, list],
 
     for cnt in range(max_retry):
         try:
-            response = anthropic_client.beta.tools.messages.create(
+            response = anthropic_client.messages.create(
                 messages=messages,
                 model=model,
                 temperature=temperature,
