@@ -10,8 +10,10 @@
 <div align="left">
 
 [![](https://img.shields.io/badge/website-STaRK-purple?style=plastic&logo=Google%20chrome)](https://stark.stanford.edu/)
-[![](https://img.shields.io/badge/Dataset-yellow?style=plastic&logo=Hugging%20face)](https://huggingface.co/datasets/snap-stanford/stark)
+[![](https://img.shields.io/badge/Dataset-online-yellow?style=plastic&logo=Hugging%20face)](https://huggingface.co/datasets/snap-stanford/stark)
 [![](https://img.shields.io/badge/SKB_Explorer-online-yellow?style=plastic&logo=Hugging%20face)](https://stark.stanford.edu/skb_explorer.html)
+[![](https://img.shields.io/badge/Huggingface_Learderboard-online-yellow?style=plastic&logo=Hugging%20face)](https://huggingface.co/spaces/snap-stanford/stark-leaderboard)
+
 [![](https://img.shields.io/badge/Arxiv-paper-red?style=plastic&logo=arxiv)](https://arxiv.org/abs/2404.13207)
 [![](https://img.shields.io/badge/pip-stark--qa-brightgreen?style=plastic&logo=Python)](https://pypi.org/project/stark-qa/) 
 [![](https://img.shields.io/badge/doc-online-blue?style=plastic&logo=Read%20the%20Docs)](https://stark.stanford.edu/docs/index.html)
@@ -22,6 +24,7 @@
 
 
 ## NEWS
+- **[Oct 2024]** [Leaderboard](https://huggingface.co/spaces/snap-stanford/stark-leaderboard): We construct the official leaderboard on Hunggingface and we are calling for submissions!
 - **[Oct 2024]** [Camera-ready paper](https://github.com/snap-stanford/stark/blob/main/media/stark.pdf) is out! We add multiple retrieval models including BM25, Colbertv2, GritLM.
 - **[Sep 2024]** STaRK is accepted to 2024 NeurIPS Dataset & Benchmark Track!
 - **[Jun 2024]** We make our benchmark as a pip package [stark-qa](https://pypi.org/project/stark-qa/). You can directly load the data from the package now!

@@ -90,10 +90,10 @@ class Evaluator:
         return eval_metrics
     
     def evaluate_batch(self, 
-                 pred_ids,
-                 pred,
-                 answer_ids: List[Any], 
-                 metrics: List[str] = ['mrr', 'hit@3', 'recall@20']) -> Dict[str, float]:
+                       pred_ids,
+                       pred,
+                       answer_ids: List[Any], 
+                       metrics: List[str] = ['mrr', 'hit@3', 'recall@20']) -> Dict[str, float]:
 
         all_pred = torch.ones((max(self.candidate_ids) + 1, pred.shape[1]), dtype=torch.float) * (pred.min() - 1)
         all_pred[pred_ids, :] = pred
