@@ -253,7 +253,7 @@ class AmazonSKB(SKB):
         if hasattr(node, 'brand'):
             doc += f'- brand: {node.brand}\n'
         try:
-            dimensions, weight = node.details.dictionary.product_dimensions.split(' ; ')
+            dimensions, weight = node.details.product_dimensions.split(' ; ')
             doc += f'- dimensions: {dimensions}\n- weight: {weight}\n'
         except:
             pass
