@@ -28,7 +28,7 @@ def parse_args():
     # Evaluation settings
     parser.add_argument("--test_ratio", type=float, default=1.0)
     parser.add_argument("--batch_size", type=int, default=256)
-    parser.add_argument("--device", type=str, default='cuda')
+    parser.add_argument("--device", type=str, default='mps')
 
     # MultiVSS specific settings
     parser.add_argument("--chunk_size", type=int, default=None)
