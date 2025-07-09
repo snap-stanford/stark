@@ -52,6 +52,9 @@ def get_llm_output(message,
         return complete_text_claude(**kwargs)
     elif 'huggingface' in model:
         return complete_text_hf(**kwargs)
+    elif any(ollama_model in model for ollama_model in ['llama', 'mistral', 'codellama', 'phi3', 'qwen', 'gemma']):
+        kwargs.update({'max_retry': MAX_API_RETRY, 'sleep_time': API_SLEEP_TIME})
+        return complete_text_ollama(**kwargs)
     else:
         raise ValueError(f"Model {model} not recognized.")
 

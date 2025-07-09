@@ -5,6 +5,7 @@ import openai
 from .claude import complete_text_claude
 from .gpt import get_gpt_output
 from .huggingface import complete_text_hf
+from .ollama import complete_text_ollama
 
 try:
     assert os.environ.get("ANTHROPIC_API_KEY") is not None
@@ -40,8 +41,41 @@ REGISTERED_TEXT_COMPLETION_LLMS = [
     "gpt-4-turbo",
     "gpt-4-turbo-2024-04-09",
     "claude-2.1",
-    "claude-3-opus-20240229", 
-    "claude-3-sonnet-20240229", 
+    "claude-3-opus-20240229",
+    "claude-3-sonnet-20240229",
     "claude-3-haiku-20240307",
-    "huggingface/codellama/CodeLlama-7b-hf"
+    "huggingface/codellama/CodeLlama-7b-hf",
+    # Ollama models (common sizes)
+    "llama3.2",
+    "llama3.2:1b",
+    "llama3.2:3b",
+    "llama3.2:70b",
+    "llama3.1",
+    "llama3.1:8b",
+    "llama3.1:70b",
+    "llama3.1:405b",
+    "llama3",
+    "llama3:8b",
+    "llama3:70b",
+    "mistral",
+    "mistral:7b",
+    "codellama",
+    "codellama:7b",
+    "codellama:13b",
+    "codellama:34b",
+    "phi3",
+    "phi3:3.8b",
+    "phi3:14b",
+    "qwen2.5",
+    "qwen2.5:0.5b",
+    "qwen2.5:1.5b",
+    "qwen2.5:3b",
+    "qwen2.5:7b",
+    "qwen2.5:14b",
+    "qwen2.5:32b",
+    "qwen2.5:72b",
+    "gemma2",
+    "gemma2:2b",
+    "gemma2:9b",
+    "gemma2:27b",
 ]
