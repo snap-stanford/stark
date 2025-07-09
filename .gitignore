@@ -19,3 +19,5 @@ autoevaluate.py
 .venv
 .venv/
 .env
+
+.vscode/
