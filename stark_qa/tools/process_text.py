@@ -4,7 +4,10 @@ import codecs
 from collections import Counter
 from bs4 import BeautifulSoup
 from nltk.corpus import wordnet
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+try:
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
+except:
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 def compact_text(text):
     """
