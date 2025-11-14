@@ -7,7 +7,6 @@ from nltk.corpus import wordnet
 try:
     from langchain.text_splitter import RecursiveCharacterTextSplitter
 except:
-    # ModuleNotFoundError: No module named 'langchain.text_splitter'
     from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 def compact_text(text):
