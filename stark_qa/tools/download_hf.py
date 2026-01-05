@@ -43,6 +43,8 @@ def download_hf_folder(repo, folder, repo_type="dataset", save_as_folder=None):
         save_as_folder (str, optional): The local directory to save the downloaded folder. 
                                         Defaults to "data/".
     """
+    # Normalize Windows backslashes to forward slashes for HF compatibility
+    folder = folder.replace("\\", "/")
     # List all files in the repository
     files = list_repo_files(repo, repo_type=repo_type)
     
