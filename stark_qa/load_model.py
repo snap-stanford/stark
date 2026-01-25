@@ -49,3 +49,15 @@ def load_model(args, skb, **kwargs):
                            max_k=args.llm_topk,
                            device=args.device
                            )
+    if model_name == 'HybridRetriever':
+        return HybridRetriever(
+            skb,
+            query_emb_dir=args.query_emb_dir,
+            candidates_emb_dir=args.node_emb_dir,
+            emb_model=args.emb_model,
+            alpha=getattr(args, 'hybrid_alpha', 0.5),
+            rrf_k=getattr(args, 'hybrid_rrf_k', 60),
+            fusion_method=getattr(args, 'hybrid_fusion', 'rrf'),
+            bm25_top_k=getattr(args, 'hybrid_bm25_topk', 100),
+            device=args.device
+        )
