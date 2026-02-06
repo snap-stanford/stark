@@ -17,7 +17,7 @@ def parse_args():
 
     # Dataset and model selection
     parser.add_argument("--dataset", default="amazon", choices=['amazon', 'prime', 'mag'])
-    parser.add_argument("--model", default="VSS", choices=["BM25", "Colbertv2", "VSS", "MultiVSS", "LLMReranker"])
+    parser.add_argument("--model", default="VSS", choices=["BM25", "Colbertv2", "VSS", "MultiVSS", "LLMReranker", "HybridRetriever"])
     parser.add_argument("--split", default="test", choices=["train", "val", "test", "test-0.1", "human_generated_eval"])
 
     # Path settings
@@ -50,6 +50,12 @@ def parse_args():
     # load the embeddings stored under folder f'doc{surfix}' or f'query{surfix}', e.g., _no_compact, 
     parser.add_argument("--surfix", type=str, default='')
 
+    # HybridRetriever specific settings
+    parser.add_argument("--hybrid_alpha", type=float, default=0.5, help='Weight for VSS (0-1). Higher = more semantic.')
+    parser.add_argument("--hybrid_rrf_k", type=int, default=60, help='RRF constant (typically 60).')
+    parser.add_argument("--hybrid_fusion", type=str, default="rrf", choices=["rrf", "weighted"], help='Fusion method.')
+    parser.add_argument("--hybrid_bm25_topk", type=int, default=100, help='Number of BM25 candidates.')
+
     return parser.parse_args()
 
 
@@ -68,7 +74,7 @@ if __name__ == "__main__":
     output_dir = osp.join(args.output_dir, "eval", args.dataset, args.model)
     if args.model == 'LLMReranker':
         output_dir = osp.join(output_dir, args.llm_model)
-    elif args.model in ['VSS', 'MultiVSS']:
+    elif args.model in ['VSS', 'MultiVSS', 'HybridRetriever']:
         output_dir = osp.join(output_dir, args.emb_model)
     args.output_dir = output_dir
 
