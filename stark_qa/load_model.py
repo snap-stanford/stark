@@ -61,3 +61,15 @@ def load_model(args, skb, **kwargs):
             bm25_top_k=getattr(args, 'hybrid_bm25_topk', 100),
             device=args.device
         )
+    if model_name == 'GraphRetriever':
+        return GraphRetriever(
+            skb,
+            query_emb_dir=args.query_emb_dir,
+            candidates_emb_dir=args.node_emb_dir,
+            emb_model=args.emb_model,
+            graph_weight=getattr(args, 'graph_weight', 0.3),
+            propagation_hops=getattr(args, 'graph_propagation_hops', 2),
+            propagation_decay=getattr(args, 'graph_propagation_decay', 0.5),
+            top_k_initial=getattr(args, 'graph_top_k_initial', 200),
+            device=args.device
+        )
