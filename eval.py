@@ -17,7 +17,7 @@ def parse_args():
 
     # Dataset and model selection
     parser.add_argument("--dataset", default="amazon", choices=['amazon', 'prime', 'mag'])
-    parser.add_argument("--model", default="VSS", choices=["BM25", "Colbertv2", "VSS", "MultiVSS", "LLMReranker", "HybridRetriever"])
+    parser.add_argument("--model", default="VSS", choices=["BM25", "Colbertv2", "VSS", "MultiVSS", "LLMReranker", "HybridRetriever", "GraphRetriever"])
     parser.add_argument("--split", default="test", choices=["train", "val", "test", "test-0.1", "human_generated_eval"])
 
     # Path settings
@@ -56,6 +56,12 @@ def parse_args():
     parser.add_argument("--hybrid_fusion", type=str, default="rrf", choices=["rrf", "weighted"], help='Fusion method.')
     parser.add_argument("--hybrid_bm25_topk", type=int, default=100, help='Number of BM25 candidates.')
 
+    # GraphRetriever specific settings
+    parser.add_argument("--graph_weight", type=float, default=0.3, help='Weight for graph-based scoring (0-1). Higher = more graph influence.')
+    parser.add_argument("--graph_propagation_hops", type=int, default=2, help='Number of hops for graph propagation.')
+    parser.add_argument("--graph_propagation_decay", type=float, default=0.5, help='Decay factor for each propagation hop.')
+    parser.add_argument("--graph_top_k_initial", type=int, default=200, help='Top-K candidates from VSS for graph propagation.')
+
     return parser.parse_args()
 
 
@@ -74,7 +80,7 @@ if __name__ == "__main__":
     output_dir = osp.join(args.output_dir, "eval", args.dataset, args.model)
     if args.model == 'LLMReranker':
         output_dir = osp.join(output_dir, args.llm_model)
-    elif args.model in ['VSS', 'MultiVSS', 'HybridRetriever']:
+    elif args.model in ['VSS', 'MultiVSS', 'HybridRetriever', 'GraphRetriever']:
         output_dir = osp.join(output_dir, args.emb_model)
     args.output_dir = output_dir
 
