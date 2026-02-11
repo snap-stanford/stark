@@ -13,8 +13,7 @@ Algorithm:
 2. Graph propagation: Boost scores of nodes connected to high-scoring nodes
 3. Final scoring: Combine semantic and graph-based scores
 
-This is particularly effective for queries that benefit from relational reasoning,
-such as "products similar to X" or "papers related to Y".
+
 """
 
 import torch
